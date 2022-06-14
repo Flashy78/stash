@@ -35,6 +35,6 @@ RUN make build
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates vips-tools ffmpeg
 COPY --from=backend /stash/stash /usr/bin/
-ENV STASH_CONFIG_FILE=/root/.stash/config.yml
+ENV STASH_CONFIG_FILE=/root/.stash/config-ro.yml
 EXPOSE 9999
 ENTRYPOINT ["stash"]
