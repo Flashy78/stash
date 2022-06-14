@@ -55,12 +55,8 @@ const StudioPage: React.FC<IProps> = ({ studio }) => {
 
   // set up hotkeys
   useEffect(() => {
-    Mousetrap.bind("e", () => setIsEditing(true));
-    Mousetrap.bind("d d", () => onDelete());
 
     return () => {
-      Mousetrap.unbind("e");
-      Mousetrap.unbind("d d");
     };
   });
 
@@ -155,10 +151,10 @@ const StudioPage: React.FC<IProps> = ({ studio }) => {
 
   const activeTabKey =
     tab === "childstudios" ||
-    tab === "images" ||
-    tab === "galleries" ||
-    tab === "performers" ||
-    tab === "movies"
+      tab === "images" ||
+      tab === "galleries" ||
+      tab === "performers" ||
+      tab === "movies"
       ? tab
       : "scenes";
   const setActiveTabKey = (newTab: string | null) => {
@@ -186,17 +182,6 @@ const StudioPage: React.FC<IProps> = ({ studio }) => {
               </title>
             </Helmet>
             <StudioDetailsPanel studio={studio} />
-            <DetailsEditNavbar
-              objectName={studio.name ?? intl.formatMessage({ id: "studio" })}
-              isNew={false}
-              isEditing={isEditing}
-              onToggleEdit={onToggleEdit}
-              onSave={() => {}}
-              onImageChange={() => {}}
-              onClearImage={() => {}}
-              onAutoTag={onAutoTag}
-              onDelete={onDelete}
-            />
           </>
         ) : (
           <StudioEditPanel

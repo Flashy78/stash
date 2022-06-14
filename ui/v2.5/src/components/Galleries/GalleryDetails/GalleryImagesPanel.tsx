@@ -90,7 +90,6 @@ export const GalleryImagesPanel: React.FC<IGalleryDetailsProps> = ({
   return (
     <ImageList
       filterHook={filterHook}
-      extraOperations={otherOperations}
       persistState={PersistanceLevel.VIEW}
       persistanceKey="galleryimages"
     />

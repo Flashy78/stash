@@ -31,19 +31,6 @@ export const MovieList: React.FC<IMovieList> = ({ filterHook }) => {
   const [isExportAll, setIsExportAll] = useState(false);
 
   const otherOperations = [
-    {
-      text: intl.formatMessage({ id: "actions.view_random" }),
-      onClick: viewRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (
@@ -87,7 +74,7 @@ export const MovieList: React.FC<IMovieList> = ({ filterHook }) => {
     renderContent,
     addKeybinds,
     otherOperations,
-    selectable: true,
+    selectable: false,
     persistState: PersistanceLevel.ALL,
     renderEditDialog,
     renderDeleteDialog,

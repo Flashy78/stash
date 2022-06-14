@@ -38,19 +38,6 @@ export const PerformerList: React.FC<IPerformerList> = ({
   const [isExportAll, setIsExportAll] = useState(false);
 
   const otherOperations = [
-    {
-      text: intl.formatMessage({ id: "actions.open_random" }),
-      onClick: getRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (
@@ -126,7 +113,7 @@ export const PerformerList: React.FC<IPerformerList> = ({
     renderEditDialog: renderEditPerformersDialog,
     filterHook,
     addKeybinds,
-    selectable: true,
+    selectable: false,
     persistState,
     renderDeleteDialog,
   });

@@ -101,14 +101,6 @@ export const GalleryDetailPanel: React.FC<IGalleryDetailProps> = ({
           ) : (
             ""
           )}
-          <h6>
-            <FormattedMessage id="created_at" />:{" "}
-            {TextUtils.formatDateTime(intl, gallery.created_at)}{" "}
-          </h6>
-          <h6>
-            <FormattedMessage id="updated_at" />:{" "}
-            {TextUtils.formatDateTime(intl, gallery.updated_at)}{" "}
-          </h6>
         </div>
         {gallery.studio && (
           <div className="col-3 d-xl-none">

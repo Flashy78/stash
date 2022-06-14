@@ -52,29 +52,6 @@ export const SceneList: React.FC<ISceneList> = ({
       isDisplayed: showWhenSelected,
       icon: "play" as IconProp,
     },
-    {
-      text: intl.formatMessage({ id: "actions.play_random" }),
-      onClick: playRandom,
-    },
-    {
-      text: `${intl.formatMessage({ id: "actions.generate" })}…`,
-      onClick: generate,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: `${intl.formatMessage({ id: "actions.identify" })}…`,
-      onClick: identify,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (

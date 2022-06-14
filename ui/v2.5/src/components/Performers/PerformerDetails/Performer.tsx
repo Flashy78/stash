@@ -69,9 +69,9 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
 
   const activeTabKey =
     tab === "scenes" ||
-    tab === "galleries" ||
-    tab === "images" ||
-    tab === "movies"
+      tab === "galleries" ||
+      tab === "images" ||
+      tab === "movies"
       ? tab
       : "details";
   const setActiveTabKey = (newTab: string | null) => {
@@ -99,7 +99,6 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
   // set up hotkeys
   useEffect(() => {
     Mousetrap.bind("a", () => setActiveTabKey("details"));
-    Mousetrap.bind("e", () => setIsEditing(!isEditing));
     Mousetrap.bind("c", () => setActiveTabKey("scenes"));
     Mousetrap.bind("g", () => setActiveTabKey("galleries"));
     Mousetrap.bind("m", () => setActiveTabKey("movies"));
@@ -131,7 +130,6 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
 
     return () => {
       Mousetrap.unbind("a");
-      Mousetrap.unbind("e");
       Mousetrap.unbind("c");
       Mousetrap.unbind("f");
       Mousetrap.unbind("o");
@@ -151,30 +149,6 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
 
   const renderTabs = () => (
     <React.Fragment>
-      <Col>
-        <Row xs={8}>
-          <DetailsEditNavbar
-            objectName={
-              performer?.name ?? intl.formatMessage({ id: "performer" })
-            }
-            onToggleEdit={() => {
-              setIsEditing(!isEditing);
-            }}
-            onDelete={onDelete}
-            onAutoTag={onAutoTag}
-            isNew={false}
-            isEditing={false}
-            onSave={() => {}}
-            onImageChange={() => {}}
-            classNames="mb-2"
-            customButtons={
-              <div>
-                <PerformerSubmitButton performer={performer} />
-              </div>
-            }
-          ></DetailsEditNavbar>
-        </Row>
-      </Col>
       <Tabs
         activeKey={activeTabKey}
         onSelect={setActiveTabKey}

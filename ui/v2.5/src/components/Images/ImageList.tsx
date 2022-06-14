@@ -158,6 +158,8 @@ const ImageListImages: React.FC<IImageListImages> = ({
     );
   }
 
+  filter.displayMode = DisplayMode.Wall;
+
   if (filter.displayMode === DisplayMode.Grid) {
     return (
       <div className="row justify-content-center">
@@ -203,19 +205,6 @@ export const ImageList: React.FC<IImageList> = ({
   const [slideshowRunning, setSlideshowRunning] = useState<boolean>(false);
 
   const otherOperations = (extraOperations ?? []).concat([
-    {
-      text: intl.formatMessage({ id: "actions.view_random" }),
-      onClick: viewRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ]);
 
   const addKeybinds = (
@@ -233,7 +222,7 @@ export const ImageList: React.FC<IImageList> = ({
 
   const { template, onSelectChange } = useImagesList({
     zoomable: true,
-    selectable: true,
+    selectable: false,
     otherOperations,
     renderContent,
     renderEditDialog: renderEditImagesDialog,

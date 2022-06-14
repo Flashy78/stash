@@ -761,8 +761,10 @@ export const useScenesList = (
     getCount: (result: FindScenesQueryResult) =>
       result?.data?.findScenes?.count ?? 0,
     getMetadataByline: (result: FindScenesQueryResult) => {
-      const duration = result?.data?.findScenes?.duration;
-      const size = result?.data?.findScenes?.filesize;
+      //const duration = result?.data?.findScenes?.duration;
+      const duration = "";
+      //const size = result?.data?.findScenes?.filesize;
+      const size = "";
       const filesize = size ? TextUtils.fileSize(size) : undefined;
 
       if (!duration && !size) {
@@ -827,6 +829,7 @@ export const useImagesList = (
       const size = result?.data?.findImages?.filesize;
       const filesize = size ? TextUtils.fileSize(size) : undefined;
 
+      return;
       if (!megapixels && !size) {
         return;
       }

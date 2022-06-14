@@ -35,19 +35,6 @@ export const GalleryList: React.FC<IGalleryList> = ({
   const [isExportAll, setIsExportAll] = useState(false);
 
   const otherOperations = [
-    {
-      text: intl.formatMessage({ id: "actions.view_random" }),
-      onClick: viewRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (
@@ -65,7 +52,7 @@ export const GalleryList: React.FC<IGalleryList> = ({
 
   const listData = useGalleriesList({
     zoomable: true,
-    selectable: true,
+    selectable: false,
     otherOperations,
     renderContent,
     renderEditDialog: renderEditGalleriesDialog,

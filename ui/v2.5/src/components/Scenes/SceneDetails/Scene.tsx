@@ -118,9 +118,6 @@ const ScenePage: React.FC<IProps> = ({
   useEffect(() => {
     Mousetrap.bind("a", () => setActiveTabKey("scene-details-panel"));
     Mousetrap.bind("q", () => setActiveTabKey("scene-queue-panel"));
-    Mousetrap.bind("e", () => setActiveTabKey("scene-edit-panel"));
-    Mousetrap.bind("k", () => setActiveTabKey("scene-markers-panel"));
-    Mousetrap.bind("i", () => setActiveTabKey("scene-file-info-panel"));
     Mousetrap.bind("o", () => onIncrementClick());
     Mousetrap.bind("p n", () => onQueueNext());
     Mousetrap.bind("p p", () => onQueuePrevious());
@@ -130,9 +127,6 @@ const ScenePage: React.FC<IProps> = ({
     return () => {
       Mousetrap.unbind("a");
       Mousetrap.unbind("q");
-      Mousetrap.unbind("e");
-      Mousetrap.unbind("k");
-      Mousetrap.unbind("i");
       Mousetrap.unbind("o");
       Mousetrap.unbind("p n");
       Mousetrap.unbind("p p");
@@ -312,11 +306,6 @@ const ScenePage: React.FC<IProps> = ({
           ) : (
             ""
           )}
-          <Nav.Item>
-            <Nav.Link eventKey="scene-markers-panel">
-              <FormattedMessage id="markers" />
-            </Nav.Link>
-          </Nav.Item>
           {scene.movies.length > 0 ? (
             <Nav.Item>
               <Nav.Link eventKey="scene-movie-panel">
@@ -349,11 +338,6 @@ const ScenePage: React.FC<IProps> = ({
               <FormattedMessage id="file_info" />
             </Nav.Link>
           </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="scene-edit-panel">
-              <FormattedMessage id="actions.edit" />
-            </Nav.Link>
-          </Nav.Item>
           <ButtonGroup className="ml-auto">
             <Nav.Item className="ml-auto">
               <ExternalPlayerButton scene={scene} />
@@ -366,14 +350,6 @@ const ScenePage: React.FC<IProps> = ({
                 onReset={onResetClick}
               />
             </Nav.Item>
-            <Nav.Item>
-              <OrganizedButton
-                loading={organizedLoading}
-                organized={scene.organized}
-                onClick={onOrganizedClick}
-              />
-            </Nav.Item>
-            <Nav.Item>{renderOperations()}</Nav.Item>
           </ButtonGroup>
         </Nav>
       </div>
@@ -448,9 +424,8 @@ const ScenePage: React.FC<IProps> = ({
       {maybeRenderSceneGenerateDialog()}
       {maybeRenderDeleteDialog()}
       <div
-        className={`scene-tabs order-xl-first order-last ${
-          collapsed ? "collapsed" : ""
-        }`}
+        className={`scene-tabs order-xl-first order-last ${collapsed ? "collapsed" : ""
+          }`}
       >
         <div className="d-none d-xl-block">
           {scene.studio && (
@@ -692,9 +667,8 @@ const SceneLoader: React.FC = () => {
         <div className="scene-tabs" />
       )}
       <div
-        className={`scene-player-container ${collapsed ? "expanded" : ""} ${
-          !showScrubber ? "hide-scrubber" : ""
-        }`}
+        className={`scene-player-container ${collapsed ? "expanded" : ""} ${!showScrubber ? "hide-scrubber" : ""
+          }`}
       >
         <ScenePlayer
           key="ScenePlayer"

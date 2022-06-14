@@ -30,19 +30,6 @@ export const StudioList: React.FC<IStudioList> = ({
   const [isExportAll, setIsExportAll] = useState(false);
 
   const otherOperations = [
-    {
-      text: intl.formatMessage({ id: "actions.view_random" }),
-      onClick: viewRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (
@@ -132,7 +119,7 @@ export const StudioList: React.FC<IStudioList> = ({
     filterHook,
     addKeybinds,
     otherOperations,
-    selectable: true,
+    selectable: false,
     persistState: !fromParent ? PersistanceLevel.ALL : PersistanceLevel.NONE,
     renderDeleteDialog,
   });

@@ -247,50 +247,6 @@ export const MainNavbar: React.FC = () => {
   function renderUtilityButtons() {
     return (
       <>
-        <Nav.Link
-          className="nav-utility"
-          href="https://opencollective.com/stashapp"
-          target="_blank"
-          onClick={handleDismiss}
-        >
-          <Button
-            className="minimal donate"
-            title={intl.formatMessage({ id: "donate" })}
-          >
-            <Icon icon="heart" />
-            <span className="d-none d-sm-inline">
-              {intl.formatMessage(messages.donate)}
-            </span>
-          </Button>
-        </Nav.Link>
-        <NavLink
-          className="nav-utility"
-          exact
-          to="/stats"
-          onClick={handleDismiss}
-        >
-          <Button
-            className="minimal d-flex align-items-center h-100"
-            title={intl.formatMessage({ id: "statistics" })}
-          >
-            <Icon icon="chart-bar" />
-          </Button>
-        </NavLink>
-        <NavLink
-          className="nav-utility"
-          exact
-          to="/settings"
-          onClick={handleDismiss}
-        >
-          <SettingsButton />
-        </NavLink>
-        <Button
-          className="nav-utility minimal"
-          onClick={() => openManual()}
-          title={intl.formatMessage({ id: "help" })}
-        >
-          <Icon icon="question-circle" />
-        </Button>
         {maybeRenderLogout()}
       </>
     );
@@ -339,18 +295,13 @@ export const MainNavbar: React.FC = () => {
 
         <Navbar.Brand as="div" onClick={handleDismiss}>
           <Link to="/">
-            <Button className="minimal brand-link d-inline-block">Stash</Button>
+            <Button className="minimal brand-link d-inline-block">Home</Button>
           </Link>
         </Navbar.Brand>
 
         <Nav className="navbar-buttons flex-row ml-auto order-xl-2">
           {!!newPath && (
             <div className="mr-2">
-              <Link to={newPath}>
-                <Button variant="primary">
-                  <FormattedMessage id="new" defaultMessage="New" />
-                </Button>
-              </Link>
             </div>
           )}
           {renderUtilityButtons()}

@@ -155,11 +155,6 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
       >
         <div>
           <Nav variant="tabs" className="mr-auto">
-            <Nav.Item>
-              <Nav.Link eventKey="gallery-details-panel">
-                <FormattedMessage id="details" />
-              </Nav.Link>
-            </Nav.Item>
             {gallery.scenes.length > 0 && (
               <Nav.Item>
                 <Nav.Link eventKey="gallery-scenes-panel">
@@ -167,26 +162,6 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
                 </Nav.Link>
               </Nav.Item>
             )}
-            {gallery.path ? (
-              <Nav.Item>
-                <Nav.Link eventKey="gallery-file-info-panel">
-                  <FormattedMessage id="file_info" />
-                </Nav.Link>
-              </Nav.Item>
-            ) : undefined}
-            <Nav.Item>
-              <Nav.Link eventKey="gallery-edit-panel">
-                <FormattedMessage id="actions.edit" />
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item className="ml-auto">
-              <OrganizedButton
-                loading={organizedLoading}
-                organized={gallery.organized}
-                onClick={onOrganizedClick}
-              />
-            </Nav.Item>
-            <Nav.Item>{renderOperations()}</Nav.Item>
           </Nav>
         </div>
 
@@ -229,21 +204,6 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
         unmountOnExit
         onSelect={(k) => k && setActiveRightTabKey(k)}
       >
-        <div>
-          <Nav variant="tabs" className="mr-auto">
-            <Nav.Item>
-              <Nav.Link eventKey="images">
-                <FormattedMessage id="images" />
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="add">
-                <FormattedMessage id="actions.add" />
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
-        </div>
-
         <Tab.Content>
           <Tab.Pane eventKey="images">
             <GalleryImagesPanel gallery={gallery} />

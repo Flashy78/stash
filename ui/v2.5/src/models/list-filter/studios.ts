@@ -11,16 +11,12 @@ import { ListFilterOptions } from "./filter-options";
 import { DisplayMode } from "./types";
 
 const defaultSortBy = "name";
-const sortByOptions = ["name", "random", "rating"]
+const sortByOptions = ["name"]
   .map(ListFilterOptions.createSortBy)
   .concat([
     {
       messageID: "gallery_count",
       value: "galleries_count",
-    },
-    {
-      messageID: "image_count",
-      value: "images_count",
     },
     {
       messageID: "scene_count",
@@ -30,18 +26,8 @@ const sortByOptions = ["name", "random", "rating"]
 
 const displayModeOptions = [DisplayMode.Grid];
 const criterionOptions = [
-  createMandatoryStringCriterionOption("name"),
-  createStringCriterionOption("details"),
-  ParentStudiosCriterionOption,
-  StudioIsMissingCriterionOption,
-  RatingCriterionOption,
-  createBooleanCriterionOption("ignore_auto_tag"),
   createMandatoryNumberCriterionOption("scene_count"),
-  createMandatoryNumberCriterionOption("image_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
-  createStringCriterionOption("url"),
-  createStringCriterionOption("stash_id"),
-  createStringCriterionOption("aliases"),
 ];
 
 export const StudioListFilterOptions = new ListFilterOptions(

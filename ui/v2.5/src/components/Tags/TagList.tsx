@@ -45,19 +45,6 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
   const [isExportAll, setIsExportAll] = useState(false);
 
   const otherOperations = [
-    {
-      text: intl.formatMessage({ id: "actions.view_random" }),
-      onClick: viewRandom,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export" }),
-      onClick: onExport,
-      isDisplayed: showWhenSelected,
-    },
-    {
-      text: intl.formatMessage({ id: "actions.export_all" }),
-      onClick: onExportAll,
-    },
   ];
 
   const addKeybinds = (
@@ -156,7 +143,7 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
     filterHook,
     addKeybinds,
     otherOperations,
-    selectable: true,
+    selectable: false,
     zoomable: true,
     defaultZoomIndex: 0,
     persistState: PersistanceLevel.ALL,
@@ -238,7 +225,7 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
     if (filter.displayMode === DisplayMode.List) {
       const deleteAlert = (
         <Modal
-          onHide={() => {}}
+          onHide={() => { }}
           show={!!deletingTag}
           icon="trash-alt"
           accept={{

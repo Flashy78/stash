@@ -58,9 +58,9 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
 
   const activeTabKey =
     tab === "markers" ||
-    tab === "images" ||
-    tab === "performers" ||
-    tab === "galleries"
+      tab === "images" ||
+      tab === "performers" ||
+      tab === "galleries"
       ? tab
       : "scenes";
   const setActiveTabKey = (newTab: string | null) => {
@@ -72,16 +72,12 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
 
   // set up hotkeys
   useEffect(() => {
-    Mousetrap.bind("e", () => setIsEditing(true));
-    Mousetrap.bind("d d", () => onDelete());
 
     return () => {
       if (isEditing) {
         Mousetrap.unbind("s s");
       }
 
-      Mousetrap.unbind("e");
-      Mousetrap.unbind("d d");
     };
   });
 
@@ -267,19 +263,6 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
             <>
               <TagDetailsPanel tag={tag} />
               {/* HACK - this is also rendered in the TagEditPanel */}
-              <DetailsEditNavbar
-                objectName={tag.name}
-                isNew={false}
-                isEditing={isEditing}
-                onToggleEdit={onToggleEdit}
-                onSave={() => {}}
-                onImageChange={() => {}}
-                onClearImage={() => {}}
-                onAutoTag={onAutoTag}
-                onDelete={onDelete}
-                classNames="mb-2"
-                customButtons={renderMergeButton()}
-              />
             </>
           ) : (
             <TagEditPanel

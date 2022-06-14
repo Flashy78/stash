@@ -98,33 +98,6 @@ export const SceneFileInfoPanel: React.FC<ISceneFileInfoPanelProps> = (
 
   return (
     <dl className="container scene-file-info details-list">
-      <TextField id="media_info.hash" value={props.scene.oshash} truncate />
-      <TextField
-        id="media_info.checksum"
-        value={props.scene.checksum}
-        truncate
-      />
-      <URLField
-        id="media_info.phash"
-        abbr="Perceptual hash"
-        value={props.scene.phash}
-        url={NavUtils.makeScenesPHashMatchUrl(props.scene.phash)}
-        target="_self"
-        truncate
-        trusted
-      />
-      <URLField
-        id="path"
-        url={`file://${props.scene.path}`}
-        value={`file://${props.scene.path}`}
-        truncate
-      />
-      <URLField
-        id="media_info.stream"
-        url={props.scene.paths.stream}
-        value={props.scene.paths.stream}
-        truncate
-      />
       {renderFunscript()}
       {renderInteractiveSpeed()}
       {renderFileSize()}

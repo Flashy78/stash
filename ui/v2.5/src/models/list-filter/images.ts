@@ -17,29 +17,22 @@ import {
 import { ListFilterOptions, MediaSortByOptions } from "./filter-options";
 import { DisplayMode } from "./types";
 
-const defaultSortBy = "path";
+const defaultSortBy = "title";
 
-const sortByOptions = ["o_counter", "filesize", ...MediaSortByOptions].map(
+const sortByOptions = ["o_counter", ...MediaSortByOptions].map(
   ListFilterOptions.createSortBy
 );
 
-const displayModeOptions = [DisplayMode.Grid, DisplayMode.Wall];
+const displayModeOptions = [DisplayMode.Wall];
 const criterionOptions = [
   createStringCriterionOption("title"),
-  createMandatoryStringCriterionOption("checksum", "media_info.checksum"),
-  createMandatoryStringCriterionOption("path"),
   RatingCriterionOption,
-  OrganizedCriterionOption,
   createMandatoryNumberCriterionOption("o_counter"),
   ResolutionCriterionOption,
-  ImageIsMissingCriterionOption,
   TagsCriterionOption,
-  createMandatoryNumberCriterionOption("tag_count"),
-  PerformerTagsCriterionOption,
   PerformersCriterionOption,
   createMandatoryNumberCriterionOption("performer_count"),
   createMandatoryNumberCriterionOption("performer_age"),
-  PerformerFavoriteCriterionOption,
   StudiosCriterionOption,
 ];
 export const ImageListFilterOptions = new ListFilterOptions(

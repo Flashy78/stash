@@ -11,24 +11,13 @@ import { DisplayMode } from "./types";
 
 const defaultSortBy = "name";
 
-const sortByOptions = ["name", "random", "date", "duration", "rating"]
-  .map(ListFilterOptions.createSortBy)
-  .concat([
-    {
-      messageID: "scene_count",
-      value: "scenes_count",
-    },
-  ]);
+const sortByOptions = ["name", "date", "rating"]
+  .map(ListFilterOptions.createSortBy);
 const displayModeOptions = [DisplayMode.Grid];
 const criterionOptions = [
   StudiosCriterionOption,
-  MovieIsMissingCriterionOption,
-  createStringCriterionOption("url"),
-  createStringCriterionOption("name"),
   createStringCriterionOption("director"),
   createStringCriterionOption("synopsis"),
-  createMandatoryNumberCriterionOption("duration"),
-  RatingCriterionOption,
   PerformersCriterionOption,
 ];
 

@@ -8,12 +8,8 @@ interface ISortByOption {
 
 export const MediaSortByOptions = [
   "title",
-  "path",
   "rating",
-  "file_mod_time",
-  "tag_count",
   "performer_count",
-  "random",
 ];
 
 export class ListFilterOptions {
@@ -38,8 +34,6 @@ export class ListFilterOptions {
     this.defaultSortBy = defaultSortBy;
     this.sortByOptions = [
       ...sortByOptions,
-      ListFilterOptions.createSortBy("created_at"),
-      ListFilterOptions.createSortBy("updated_at"),
     ];
     this.displayModeOptions = displayModeOptions;
     this.criterionOptions = criterionOptions;

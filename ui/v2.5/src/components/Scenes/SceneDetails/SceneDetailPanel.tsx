@@ -19,9 +19,6 @@ export const SceneDetailPanel: React.FC<ISceneDetailProps> = (props) => {
     if (!props.scene.details || props.scene.details === "") return;
     return (
       <>
-        <h6>
-          <FormattedMessage id="details" />
-        </h6>
         <p className="pre">{props.scene.details}</p>
       </>
     );
@@ -107,21 +104,12 @@ export const SceneDetailPanel: React.FC<ISceneDetailProps> = (props) => {
           )}
           {props.scene.file.width && props.scene.file.height && (
             <h6>
-              <FormattedMessage id="resolution" />:{" "}
               {TextUtils.resolution(
                 props.scene.file.width,
                 props.scene.file.height
               )}
             </h6>
           )}
-          <h6>
-            <FormattedMessage id="created_at" />:{" "}
-            {TextUtils.formatDateTime(intl, props.scene.created_at)}{" "}
-          </h6>
-          <h6>
-            <FormattedMessage id="updated_at" />:{" "}
-            {TextUtils.formatDateTime(intl, props.scene.updated_at)}{" "}
-          </h6>
         </div>
         {props.scene.studio && (
           <div className="col-3 d-xl-none">

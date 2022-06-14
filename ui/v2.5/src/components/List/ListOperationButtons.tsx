@@ -42,24 +42,9 @@ export const ListOperationButtons: React.FC<IListOperationButtonsProps> = ({
     Mousetrap.bind("s a", () => onSelectAll?.());
     Mousetrap.bind("s n", () => onSelectNone?.());
 
-    if (itemsSelected) {
-      Mousetrap.bind("e", () => {
-        onEdit?.();
-      });
-
-      Mousetrap.bind("d d", () => {
-        onDelete?.();
-      });
-    }
-
     return () => {
       Mousetrap.unbind("s a");
       Mousetrap.unbind("s n");
-
-      if (itemsSelected) {
-        Mousetrap.unbind("e");
-        Mousetrap.unbind("d d");
-      }
     };
   });
 
@@ -76,21 +61,6 @@ export const ListOperationButtons: React.FC<IListOperationButtonsProps> = ({
       return o.isDisplayed();
     });
     if (itemsSelected) {
-      if (onEdit) {
-        buttons.push({
-          icon: "pencil-alt",
-          text: intl.formatMessage({ id: "actions.edit" }),
-          onClick: onEdit,
-        });
-      }
-      if (onDelete) {
-        buttons.push({
-          icon: "trash",
-          text: intl.formatMessage({ id: "actions.delete" }),
-          onClick: onDelete,
-          buttonVariant: "danger",
-        });
-      }
     }
 
     if (buttons.length > 0) {
