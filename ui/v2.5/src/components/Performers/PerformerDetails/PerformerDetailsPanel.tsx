@@ -145,7 +145,6 @@ export const PerformerDetailsPanel: React.FC<IPerformerDetails> = ({
         )}
       />
       {renderTagsField()}
-      {renderStashIDs()}
     </dl>
   );
 };

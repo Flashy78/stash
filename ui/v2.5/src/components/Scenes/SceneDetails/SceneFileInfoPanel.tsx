@@ -144,7 +144,6 @@ export const SceneFileInfoPanel: React.FC<ISceneFileInfoPanelProps> = (
         value={props.scene.url}
         truncate
       />
-      {renderStashIDs()}
     </dl>
   );
 };
