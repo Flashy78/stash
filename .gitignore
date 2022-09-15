@@ -58,3 +58,9 @@ node_modules
 /stash
 dist
 .DS_Store
+
+# Local Dev Files
+matt.txt
+config.yml
+icon.png
+stash-go.*
