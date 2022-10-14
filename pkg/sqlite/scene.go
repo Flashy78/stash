@@ -27,35 +27,43 @@ const sceneCaptionTypeColumn = "caption_type"
 var scenesForPerformerQuery = selectAll(sceneTable) + `
 LEFT JOIN performers_scenes as performers_join on performers_join.scene_id = scenes.id
 WHERE performers_join.performer_id = ?
+AND scenes.organized = 1
 GROUP BY scenes.id
 `
 
 var countScenesForPerformerQuery = `
 SELECT performer_id FROM performers_scenes as performers_join
+JOIN scenes ON performers_join.scene_id = scenes.id
 WHERE performer_id = ?
+AND scenes.organized = 1
 GROUP BY scene_id
 `
 
 var scenesForStudioQuery = selectAll(sceneTable) + `
 JOIN studios ON studios.id = scenes.studio_id
 WHERE studios.id = ?
+AND scenes.organized = 1
 GROUP BY scenes.id
 `
 var scenesForMovieQuery = selectAll(sceneTable) + `
 LEFT JOIN movies_scenes as movies_join on movies_join.scene_id = scenes.id
 WHERE movies_join.movie_id = ?
+AND scenes.organized = 1
 GROUP BY scenes.id
 `
 
 var countScenesForTagQuery = `
 SELECT tag_id AS id FROM scenes_tags
+JOIN scenes ON scenes_tags.scene_id = scenes.id
 WHERE scenes_tags.tag_id = ?
+AND scenes.organized = 1
 GROUP BY scenes_tags.scene_id
 `
 
 var scenesForGalleryQuery = selectAll(sceneTable) + `
 LEFT JOIN scenes_galleries as galleries_join on galleries_join.scene_id = scenes.id
 WHERE galleries_join.gallery_id = ?
+AND scenes.organized = 1
 GROUP BY scenes.id
 `
 
@@ -371,6 +379,10 @@ func (qb *sceneQueryBuilder) validateFilter(sceneFilter *models.SceneFilterType)
 	return nil
 }
 
+func BoolPointer(b bool) *bool {
+	return &b
+}
+
 func (qb *sceneQueryBuilder) makeFilter(sceneFilter *models.SceneFilterType) *filterBuilder {
 	query := &filterBuilder{}
 
@@ -392,7 +404,8 @@ func (qb *sceneQueryBuilder) makeFilter(sceneFilter *models.SceneFilterType) *fi
 	query.handleCriterion(phashCriterionHandler(sceneFilter.Phash))
 	query.handleCriterion(intCriterionHandler(sceneFilter.Rating, "scenes.rating"))
 	query.handleCriterion(intCriterionHandler(sceneFilter.OCounter, "scenes.o_counter"))
-	query.handleCriterion(boolCriterionHandler(sceneFilter.Organized, "scenes.organized"))
+	// query.handleCriterion(boolCriterionHandler(sceneFilter.Organized, "scenes.organized"))
+	query.handleCriterion(boolCriterionHandler(BoolPointer(true), "scenes.organized"))
 	query.handleCriterion(durationCriterionHandler(sceneFilter.Duration, "scenes.duration"))
 	query.handleCriterion(resolutionCriterionHandler(sceneFilter.Resolution, "scenes.height", "scenes.width"))
 	query.handleCriterion(hasMarkersCriterionHandler(sceneFilter.HasMarkers))

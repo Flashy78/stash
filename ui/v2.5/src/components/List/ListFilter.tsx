@@ -209,26 +209,6 @@ export const ListFilter: React.FC<IListFilterProps> = ({
       <>
         <div className="d-flex mb-1">
           <InputGroup className="mr-2 flex-grow-1">
-            <InputGroup.Prepend>
-              <Dropdown>
-                <OverlayTrigger
-                  placement="top"
-                  overlay={
-                    <Tooltip id="filter-tooltip">
-                      <FormattedMessage id="search_filter.saved_filters" />
-                    </Tooltip>
-                  }
-                >
-                  <Dropdown.Toggle variant="secondary">
-                    <Icon icon="bookmark" />
-                  </Dropdown.Toggle>
-                </OverlayTrigger>
-                <Dropdown.Menu
-                  as={SavedFilterDropdown}
-                  className="saved-filter-list-menu"
-                />
-              </Dropdown>
-            </InputGroup.Prepend>
             <FormControl
               ref={queryRef}
               placeholder={`${intl.formatMessage({ id: "actions.search" })}…`}
@@ -347,7 +327,7 @@ export const ListFilter: React.FC<IListFilterProps> = ({
                       if (e.key === "Enter") {
                         onChangePageSize(
                           (perPageInput.current as HTMLInputElement)?.value ??
-                            ""
+                          ""
                         );
                         e.preventDefault();
                       }
@@ -359,7 +339,7 @@ export const ListFilter: React.FC<IListFilterProps> = ({
                       onClick={() =>
                         onChangePageSize(
                           (perPageInput.current as HTMLInputElement)?.value ??
-                            ""
+                          ""
                         )
                       }
                     >
