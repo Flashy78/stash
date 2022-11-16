@@ -1,5 +1,9 @@
 import { ApolloError } from "@apollo/client/errors";
-import { debounce } from "lodash";
+import {
+  faCheckCircle,
+  faTimesCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import debounce from "lodash-es/debounce";
 import React, {
   useState,
   useEffect,
@@ -41,7 +45,7 @@ export interface ISettingsContextState {
   saveDefaults: (input: Partial<GQL.ConfigDefaultSettingsInput>) => void;
   saveScraping: (input: Partial<GQL.ConfigScrapingInput>) => void;
   saveDLNA: (input: Partial<GQL.ConfigDlnaInput>) => void;
-  saveUI: (input: IUIConfig) => void;
+  saveUI: (input: Partial<IUIConfig>) => void;
 }
 
 export const SettingStateContext = React.createContext<ISettingsContextState>({
@@ -131,7 +135,7 @@ export const SettingsContext: React.FC = ({ children }) => {
     setDefaults({ ...withoutTypename(data.configuration.defaults) });
     setScraping({ ...withoutTypename(data.configuration.scraping) });
     setDLNA({ ...withoutTypename(data.configuration.dlna) });
-    setUI({ ...withoutTypename(data.configuration.ui) });
+    setUI(data.configuration.ui);
     setApiKey(data.configuration.general.apiKey);
   }, [data, error]);
 
@@ -439,7 +443,11 @@ export const SettingsContext: React.FC = ({ children }) => {
 
     setPendingUI((current) => {
       if (!current) {
-        return input;
+        // use full UI object to ensure nothing is wiped
+        return {
+          ...ui,
+          ...input,
+        };
       }
       return {
         ...current,
@@ -452,7 +460,7 @@ export const SettingsContext: React.FC = ({ children }) => {
     if (updateSuccess === false) {
       return (
         <div className="loading-indicator failed">
-          <Icon icon="times-circle" className="fa-fw" />
+          <Icon icon={faTimesCircle} className="fa-fw" />
         </div>
       );
     }
@@ -477,7 +485,7 @@ export const SettingsContext: React.FC = ({ children }) => {
     if (updateSuccess) {
       return (
         <div className="loading-indicator success">
-          <Icon icon="check-circle" className="fa-fw" />
+          <Icon icon={faCheckCircle} className="fa-fw" />
         </div>
       );
     }

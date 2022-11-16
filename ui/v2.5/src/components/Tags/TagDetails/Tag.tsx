@@ -1,4 +1,4 @@
-import { Tabs, Tab, Dropdown, Badge } from "react-bootstrap";
+import { Tabs, Tab, Dropdown } from "react-bootstrap";
 import React, { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -14,6 +14,7 @@ import {
 } from "src/core/StashService";
 import { ImageUtils } from "src/utils";
 import {
+  Counter,
   DetailsEditNavbar,
   ErrorMessage,
   Modal,
@@ -21,6 +22,7 @@ import {
   Icon,
 } from "src/components/Shared";
 import { useToast } from "src/hooks";
+import { ConfigurationContext } from "src/hooks/Config";
 import { tagRelationHook } from "src/core/tags";
 import { TagScenesPanel } from "./TagScenesPanel";
 import { TagMarkersPanel } from "./TagMarkersPanel";
@@ -30,6 +32,12 @@ import { TagGalleriesPanel } from "./TagGalleriesPanel";
 import { TagDetailsPanel } from "./TagDetailsPanel";
 import { TagEditPanel } from "./TagEditPanel";
 import { TagMergeModal } from "./TagMergeDialog";
+import {
+  faSignInAlt,
+  faSignOutAlt,
+  faTrashAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import { IUIConfig } from "src/core/config";
 
 interface IProps {
   tag: GQL.TagDataFragment;
@@ -43,6 +51,12 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
   const history = useHistory();
   const Toast = useToast();
   const intl = useIntl();
+
+  // Configuration settings
+  const { configuration } = React.useContext(ConfigurationContext);
+  const abbreviateCounter =
+    (configuration?.ui as IUIConfig)?.abbreviateCounters ?? false;
+
   const { tab = "scenes" } = useParams<ITabParams>();
 
   // Editing state
@@ -161,7 +175,7 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
     return (
       <Modal
         show={isDeleteAlertOpen}
-        icon="trash-alt"
+        icon={faTrashAlt}
         accept={{
           text: intl.formatMessage({ id: "actions.delete" }),
           variant: "danger",
@@ -215,7 +229,7 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
             className="bg-secondary text-white"
             onClick={() => setMergeType("from")}
           >
-            <Icon icon="sign-in-alt" />
+            <Icon icon={faSignInAlt} />
             <FormattedMessage id="actions.merge_from" />
             ...
           </Dropdown.Item>
@@ -223,7 +237,7 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
             className="bg-secondary text-white"
             onClick={() => setMergeType("into")}
           >
-            <Icon icon="sign-out-alt" />
+            <Icon icon={faSignOutAlt} />
             <FormattedMessage id="actions.merge_into" />
             ...
           </Dropdown.Item>
@@ -258,6 +272,7 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               renderImage()
             )}
             <h2>{tag.name}</h2>
+            <p>{tag.description}</p>
           </div>
           {!isEditing ? (
             <>
@@ -286,9 +301,10 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               title={
                 <React.Fragment>
                   {intl.formatMessage({ id: "scenes" })}
-                  <Badge className="left-spacing" pill variant="secondary">
-                    {intl.formatNumber(tag.scene_count ?? 0)}
-                  </Badge>
+                  <Counter
+                    abbreviateCounter={abbreviateCounter}
+                    count={tag.scene_count ?? 0}
+                  />
                 </React.Fragment>
               }
             >
@@ -299,9 +315,10 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               title={
                 <React.Fragment>
                   {intl.formatMessage({ id: "images" })}
-                  <Badge className="left-spacing" pill variant="secondary">
-                    {intl.formatNumber(tag.image_count ?? 0)}
-                  </Badge>
+                  <Counter
+                    abbreviateCounter={abbreviateCounter}
+                    count={tag.image_count ?? 0}
+                  />
                 </React.Fragment>
               }
             >
@@ -312,9 +329,10 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               title={
                 <React.Fragment>
                   {intl.formatMessage({ id: "galleries" })}
-                  <Badge className="left-spacing" pill variant="secondary">
-                    {intl.formatNumber(tag.gallery_count ?? 0)}
-                  </Badge>
+                  <Counter
+                    abbreviateCounter={abbreviateCounter}
+                    count={tag.gallery_count ?? 0}
+                  />
                 </React.Fragment>
               }
             >
@@ -325,9 +343,10 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               title={
                 <React.Fragment>
                   {intl.formatMessage({ id: "markers" })}
-                  <Badge className="left-spacing" pill variant="secondary">
-                    {intl.formatNumber(tag.scene_marker_count ?? 0)}
-                  </Badge>
+                  <Counter
+                    abbreviateCounter={abbreviateCounter}
+                    count={tag.scene_marker_count ?? 0}
+                  />
                 </React.Fragment>
               }
             >
@@ -338,9 +357,10 @@ const TagPage: React.FC<IProps> = ({ tag }) => {
               title={
                 <React.Fragment>
                   {intl.formatMessage({ id: "performers" })}
-                  <Badge className="left-spacing" pill variant="secondary">
-                    {intl.formatNumber(tag.performer_count ?? 0)}
-                  </Badge>
+                  <Counter
+                    abbreviateCounter={abbreviateCounter}
+                    count={tag.performer_count ?? 0}
+                  />
                 </React.Fragment>
               }
             >

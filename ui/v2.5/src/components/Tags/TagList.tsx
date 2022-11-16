@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import _ from "lodash";
+import cloneDeep from "lodash-es/cloneDeep";
 import Mousetrap from "mousetrap";
 import { FindTagsQueryResult } from "src/core/generated-graphql";
 import { ListFilterModel } from "src/models/list-filter/filter";
@@ -25,6 +25,7 @@ import { Icon, Modal, DeleteEntityDialog } from "src/components/Shared";
 import { TagCard } from "./TagCard";
 import { ExportDialog } from "../Shared/ExportDialog";
 import { tagRelationHook } from "../../core/tags";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
 interface ITagList {
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
@@ -69,7 +70,7 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
       const { count } = result.data.findTags;
 
       const index = Math.floor(Math.random() * count);
-      const filterCopy = _.cloneDeep(filter);
+      const filterCopy = cloneDeep(filter);
       filterCopy.itemsPerPage = 1;
       filterCopy.currentPage = index + 1;
       const singleResult = await queryFindTags(filterCopy);
@@ -227,7 +228,7 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
         <Modal
           onHide={() => { }}
           show={!!deletingTag}
-          icon="trash-alt"
+          icon={faTrashAlt}
           accept={{
             onClick: onDelete,
             variant: "danger",
@@ -325,7 +326,7 @@ export const TagList: React.FC<ITagList> = ({ filterHook }) => {
                 />
               </span>
               <Button variant="danger" onClick={() => setDeletingTag(tag)}>
-                <Icon icon="trash-alt" color="danger" />
+                <Icon icon={faTrashAlt} color="danger" />
               </Button>
             </div>
           </div>

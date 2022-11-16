@@ -19,9 +19,11 @@ import { DisplayMode } from "./types";
 
 const defaultSortBy = "title";
 
-const sortByOptions = ["o_counter", ...MediaSortByOptions].map(
-  ListFilterOptions.createSortBy
-);
+const sortByOptions = [
+  "o_counter",
+  "file_count",
+  ...MediaSortByOptions,
+].map(ListFilterOptions.createSortBy);
 
 const displayModeOptions = [DisplayMode.Wall];
 const criterionOptions = [
@@ -34,6 +36,7 @@ const criterionOptions = [
   createMandatoryNumberCriterionOption("performer_count"),
   createMandatoryNumberCriterionOption("performer_age"),
   StudiosCriterionOption,
+  createMandatoryNumberCriterionOption("file_count"),
 ];
 export const ImageListFilterOptions = new ListFilterOptions(
   defaultSortBy,

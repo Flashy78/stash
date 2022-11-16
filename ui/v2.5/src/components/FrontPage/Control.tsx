@@ -14,6 +14,7 @@ import { MovieRecommendationRow } from "../Movies/MovieRecommendationRow";
 import { PerformerRecommendationRow } from "../Performers/PerformerRecommendationRow";
 import { SceneRecommendationRow } from "../Scenes/SceneRecommendationRow";
 import { StudioRecommendationRow } from "../Studios/StudioRecommendationRow";
+import { TagRecommendationRow } from "../Tags/TagRecommendationRow";
 
 interface IFilter {
   mode: GQL.FilterMode;
@@ -77,6 +78,14 @@ const RecommendationRow: React.FC<IFilter> = ({ mode, filter, header }) => {
           header={header}
         />
       );
+    case GQL.FilterMode.Tags:
+      return (
+        <TagRecommendationRow
+          isTouch={isTouch}
+          filter={filter}
+          header={header}
+        />
+      );
     default:
       return <></>;
   }
@@ -98,7 +107,7 @@ const SavedFilterResults: React.FC<ISavedFilterResults> = ({
 
     const ret = new ListFilterModel(mode);
     ret.currentPage = 1;
-    ret.configureFromQueryParameters(JSON.parse(filterJSON));
+    ret.configureFromJSON(filterJSON);
     ret.randomSeed = -1;
     return ret;
   }, [data?.findSavedFilter]);
