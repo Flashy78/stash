@@ -58,23 +58,6 @@ const FileInfoPanel: React.FC<IFileInfoPanelProps> = (
             </dd>
           </>
         )}
-        <TextField id="media_info.hash" value={oshash?.value} truncate />
-        <TextField id="media_info.checksum" value={checksum?.value} truncate />
-        <URLField
-          id="media_info.phash"
-          abbr="Perceptual hash"
-          value={phash?.value}
-          url={NavUtils.makeScenesPHashMatchUrl(phash?.value)}
-          target="_self"
-          truncate
-          trusted
-        />
-        <URLField
-          id="path"
-          url={`file://${props.file.path}`}
-          value={`file://${props.file.path}`}
-          truncate
-        />
         {renderFileSize()}
         <TextField
           id="duration"

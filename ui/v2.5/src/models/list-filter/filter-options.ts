@@ -10,6 +10,7 @@ export const MediaSortByOptions = [
   "title",
   "rating",
   "performer_count",
+  "random",
 ];
 
 export class ListFilterOptions {

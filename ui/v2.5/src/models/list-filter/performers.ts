@@ -16,6 +16,7 @@ import { CriterionType, DisplayMode } from "./types";
 const defaultSortBy = "name";
 const sortByOptions = [
   "name",
+  "random",
   "rating",
 ]
   .map(ListFilterOptions.createSortBy)

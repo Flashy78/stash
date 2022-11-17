@@ -11,7 +11,7 @@ import { ListFilterOptions } from "./filter-options";
 import { DisplayMode } from "./types";
 
 const defaultSortBy = "name";
-const sortByOptions = ["name"]
+const sortByOptions = ["name", "random"]
   .map(ListFilterOptions.createSortBy)
   .concat([
     {

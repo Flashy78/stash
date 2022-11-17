@@ -60,7 +60,7 @@ dist
 .DS_Store
 
 # Local Dev Files
-matt.txt
+dev.txt
 config.yml
 icon.png
 stash-go.*
