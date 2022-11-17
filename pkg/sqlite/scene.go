@@ -597,8 +597,13 @@ func (qb *SceneStore) findBySubquery(ctx context.Context, sq *goqu.SelectDataset
 }
 
 func (qb *SceneStore) FindByPerformerID(ctx context.Context, performerID int) ([]*models.Scene, error) {
-	sq := dialect.From(scenesPerformersJoinTable).Select(scenesPerformersJoinTable.Col(sceneIDColumn)).Where(
+	table := qb.table()
+
+	sq := dialect.From(scenesPerformersJoinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(scenesPerformersJoinTable.Col(sceneIDColumn))),
+	).Select(scenesPerformersJoinTable.Col(sceneIDColumn)).Where(
 		scenesPerformersJoinTable.Col(performerIDColumn).Eq(performerID),
+		table.Col("organized").Eq(1),
 	)
 	ret, err := qb.findBySubquery(ctx, sq)
 
@@ -610,8 +615,13 @@ func (qb *SceneStore) FindByPerformerID(ctx context.Context, performerID int) ([
 }
 
 func (qb *SceneStore) FindByGalleryID(ctx context.Context, galleryID int) ([]*models.Scene, error) {
-	sq := dialect.From(galleriesScenesJoinTable).Select(galleriesScenesJoinTable.Col(sceneIDColumn)).Where(
+	table := qb.table()
+
+	sq := dialect.From(galleriesScenesJoinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(galleriesScenesJoinTable.Col(sceneIDColumn))),
+	).Select(galleriesScenesJoinTable.Col(sceneIDColumn)).Where(
 		galleriesScenesJoinTable.Col(galleryIDColumn).Eq(galleryID),
+		table.Col("organized").Eq(1),
 	)
 	ret, err := qb.findBySubquery(ctx, sq)
 
@@ -623,15 +633,23 @@ func (qb *SceneStore) FindByGalleryID(ctx context.Context, galleryID int) ([]*mo
 }
 
 func (qb *SceneStore) CountByPerformerID(ctx context.Context, performerID int) (int, error) {
+	table := qb.table()
 	joinTable := scenesPerformersJoinTable
 
-	q := dialect.Select(goqu.COUNT("*")).From(joinTable).Where(joinTable.Col(performerIDColumn).Eq(performerID))
+	q := dialect.Select(goqu.COUNT("*")).From(joinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(scenesPerformersJoinTable.Col(sceneIDColumn))),
+	).Where(joinTable.Col(performerIDColumn).Eq(performerID), table.Col("organized").Eq(1))
 	return count(ctx, q)
 }
 
 func (qb *SceneStore) FindByMovieID(ctx context.Context, movieID int) ([]*models.Scene, error) {
-	sq := dialect.From(scenesMoviesJoinTable).Select(scenesMoviesJoinTable.Col(sceneIDColumn)).Where(
+	table := qb.table()
+
+	sq := dialect.From(scenesMoviesJoinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(scenesMoviesJoinTable.Col(sceneIDColumn))),
+	).Select(scenesMoviesJoinTable.Col(sceneIDColumn)).Where(
 		scenesMoviesJoinTable.Col(movieIDColumn).Eq(movieID),
+		table.Col("organized").Eq(1),
 	)
 	ret, err := qb.findBySubquery(ctx, sq)
 
@@ -643,14 +661,18 @@ func (qb *SceneStore) FindByMovieID(ctx context.Context, movieID int) ([]*models
 }
 
 func (qb *SceneStore) CountByMovieID(ctx context.Context, movieID int) (int, error) {
+	table := qb.table()
 	joinTable := scenesMoviesJoinTable
 
-	q := dialect.Select(goqu.COUNT("*")).From(joinTable).Where(joinTable.Col(movieIDColumn).Eq(movieID))
+	q := dialect.Select(goqu.COUNT("*")).From(joinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(scenesMoviesJoinTable.Col(sceneIDColumn))),
+	).Where(joinTable.Col(movieIDColumn).Eq(movieID), table.Col("organized").Eq(1))
 	return count(ctx, q)
 }
 
 func (qb *SceneStore) Count(ctx context.Context) (int, error) {
-	q := dialect.Select(goqu.COUNT("*")).From(qb.table())
+	table := qb.table()
+	q := dialect.Select(goqu.COUNT("*")).From(qb.table(), table.Col("organized").Eq(1))
 	return count(ctx, q)
 }
 
@@ -698,14 +720,17 @@ func (qb *SceneStore) Duration(ctx context.Context) (float64, error) {
 func (qb *SceneStore) CountByStudioID(ctx context.Context, studioID int) (int, error) {
 	table := qb.table()
 
-	q := dialect.Select(goqu.COUNT("*")).From(table).Where(table.Col(studioIDColumn).Eq(studioID))
+	q := dialect.Select(goqu.COUNT("*")).From(table).Where(table.Col(studioIDColumn).Eq(studioID), table.Col("organized").Eq(1))
 	return count(ctx, q)
 }
 
 func (qb *SceneStore) CountByTagID(ctx context.Context, tagID int) (int, error) {
+	table := qb.table()
 	joinTable := scenesTagsJoinTable
 
-	q := dialect.Select(goqu.COUNT("*")).From(joinTable).Where(joinTable.Col(tagIDColumn).Eq(tagID))
+	q := dialect.Select(goqu.COUNT("*")).From(joinTable).InnerJoin(
+		table, goqu.On(table.Col("id").Eq(joinTable.Col(sceneIDColumn))),
+	).Where(joinTable.Col(tagIDColumn).Eq(tagID), table.Col("organized").Eq(1))
 	return count(ctx, q)
 }
 
@@ -740,7 +765,7 @@ func (qb *SceneStore) Wall(ctx context.Context, q *string) ([]*models.Scene, err
 	}
 
 	table := qb.table()
-	qq := qb.selectDataset().Prepared(true).Where(table.Col("details").Like("%" + s + "%")).Order(goqu.L("RANDOM()").Asc()).Limit(80)
+	qq := qb.selectDataset().Prepared(true).Where(table.Col("details").Like("%"+s+"%"), table.Col("organized").Eq(1)).Order(goqu.L("RANDOM()").Asc()).Limit(80)
 	return qb.getMany(ctx, qq)
 }
 
@@ -749,7 +774,7 @@ func (qb *SceneStore) All(ctx context.Context) ([]*models.Scene, error) {
 	fileTable := fileTableMgr.table
 	folderTable := folderTableMgr.table
 
-	return qb.getMany(ctx, qb.selectDataset().Order(
+	return qb.getMany(ctx, qb.selectDataset().Where(table.Col("organized").Eq(1)).Order(
 		folderTable.Col("path").Asc(),
 		fileTable.Col("basename").Asc(),
 		table.Col("date").Asc(),
