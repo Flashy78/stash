@@ -241,24 +241,6 @@ export const ListFilter: React.FC<IListFilterProps> = ({
         </div>
 
         <ButtonGroup className="mr-2 mb-2">
-          <Dropdown>
-            <OverlayTrigger
-              placement="top"
-              overlay={
-                <Tooltip id="filter-tooltip">
-                  <FormattedMessage id="search_filter.saved_filters" />
-                </Tooltip>
-              }
-            >
-              <Dropdown.Toggle variant="secondary">
-                <Icon icon={faBookmark} />
-              </Dropdown.Toggle>
-            </OverlayTrigger>
-            <Dropdown.Menu
-              as={SavedFilterDropdown}
-              className="saved-filter-list-menu"
-            />
-          </Dropdown>
           <OverlayTrigger
             placement="top"
             overlay={
