@@ -4,6 +4,7 @@ import {
   createMandatoryStringCriterionOption,
   createStringCriterionOption,
   MandatoryNumberCriterionOption,
+  createMandatoryTimestampCriterionOption,
 } from "./criteria/criterion";
 import { TagIsMissingCriterionOption } from "./criteria/is-missing";
 import { ListFilterOptions } from "./filter-options";
@@ -33,6 +34,7 @@ const sortByOptions = ["name", "random"]
 
 const displayModeOptions = [DisplayMode.Grid];
 const criterionOptions = [
+  createStringCriterionOption("description"),
   createMandatoryNumberCriterionOption("scene_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
   createMandatoryNumberCriterionOption("performer_count"),

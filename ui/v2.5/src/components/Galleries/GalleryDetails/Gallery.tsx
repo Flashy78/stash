@@ -9,7 +9,12 @@ import {
   useFindGallery,
   useGalleryUpdate,
 } from "src/core/StashService";
-import { ErrorMessage, LoadingIndicator, Icon } from "src/components/Shared";
+import {
+  ErrorMessage,
+  LoadingIndicator,
+  Icon,
+  Counter,
+} from "src/components/Shared";
 import Mousetrap from "mousetrap";
 import { useToast } from "src/hooks";
 import { OrganizedButton } from "src/components/Scenes/SceneDetails/OrganizedButton";
