@@ -46,6 +46,8 @@ const numberCriteria: CriterionType[] = [
 ];
 
 const stringCriteria: CriterionType[] = [
+  "name",
+  "disambiguation",
   "details",
   "country",
   "hair_color",

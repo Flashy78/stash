@@ -31,11 +31,11 @@ import { objectTitle } from "src/core/files";
 import { galleryTitle } from "src/core/galleries";
 import { TagPopover } from "../Tags/TagPopover";
 
-export type ValidTypes =
-  | GQL.SlimPerformerDataFragment
-  | GQL.SlimTagDataFragment
-  | GQL.SlimStudioDataFragment
-  | GQL.SlimMovieDataFragment;
+export type SelectObject = {
+  id: string;
+  name?: string | null;
+  title?: string | null;
+};
 type Option = { value: string; label: string };
 
 interface ITypeProps {
@@ -53,7 +53,7 @@ interface ITypeProps {
 interface IFilterProps {
   ids?: string[];
   initialIds?: string[];
-  onSelect?: (item: ValidTypes[]) => void;
+  onSelect?: (item: SelectObject[]) => void;
   noSelectionString?: string;
   className?: string;
   isMulti?: boolean;
@@ -90,8 +90,9 @@ interface ISelectProps<T extends boolean> {
   noOptionsMessage?: string | null;
 }
 interface IFilterComponentProps extends IFilterProps {
-  items: Array<ValidTypes>;
-  onCreate?: (name: string) => Promise<{ item: ValidTypes; message: string }>;
+  items: SelectObject[];
+  toOption?: (item: SelectObject) => Option;
+  onCreate?: (name: string) => Promise<{ item: SelectObject; message: string }>;
 }
 interface IFilterSelectProps<T extends boolean>
   extends Omit<ISelectProps<T>, "onChange" | "items" | "onCreateOption"> {}
@@ -265,10 +266,15 @@ const FilterSelectComponent = <T extends boolean>(
   const selectedIds = ids ?? [];
   const Toast = useToast();
 
-  const options = items.map((i) => ({
-    value: i.id,
-    label: i.name ?? "",
-  }));
+  const options = items.map((i) => {
+    if (props.toOption) {
+      return props.toOption(i);
+    }
+    return {
+      value: i.id,
+      label: i.name ?? i.title ?? "",
+    };
+  });
 
   const selected = options.filter((option) =>
     selectedIds.includes(option.value)
@@ -514,6 +520,13 @@ export const MarkerTitleSuggest: React.FC<IMarkerSuggestProps> = (props) => {
 };
 
 export const PerformerSelect: React.FC<IFilterProps> = (props) => {
+  const [performerAliases, setPerformerAliases] = useState<
+    Record<string, string[]>
+  >({});
+  const [performerDisambiguations, setPerformerDisambiguations] = useState<
+    Record<string, string>
+  >({});
+  const [allAliases, setAllAliases] = useState<string[]>([]);
   const { data, loading } = useAllPerformersForFilter();
   const [createPerformer] = usePerformerCreate();
 
@@ -522,7 +535,101 @@ export const PerformerSelect: React.FC<IFilterProps> = (props) => {
   const defaultCreatable =
     !configuration?.interface.disableDropdownCreate.performer ?? true;
 
-  const performers = data?.allPerformers ?? [];
+  const performers = useMemo(() => data?.allPerformers ?? [], [
+    data?.allPerformers,
+  ]);
+
+  useEffect(() => {
+    // build the tag aliases map
+    const newAliases: Record<string, string[]> = {};
+    const newDisambiguations: Record<string, string> = {};
+    const newAll: string[] = [];
+    performers.forEach((t) => {
+      if (t.alias_list.length) {
+        newAliases[t.id] = t.alias_list;
+      }
+      newAll.push(...t.alias_list);
+      if (t.disambiguation) {
+        newDisambiguations[t.id] = t.disambiguation;
+      }
+    });
+    setPerformerAliases(newAliases);
+    setAllAliases(newAll);
+    setPerformerDisambiguations(newDisambiguations);
+  }, [performers]);
+
+  const PerformerOption: React.FC<OptionProps<Option, boolean>> = (
+    optionProps
+  ) => {
+    const { inputValue } = optionProps.selectProps;
+
+    let thisOptionProps = optionProps;
+
+    let { label } = optionProps.data;
+    const id = Number(optionProps.data.value);
+
+    if (id && performerDisambiguations[id]) {
+      label += ` (${performerDisambiguations[id]})`;
+    }
+
+    if (
+      inputValue &&
+      !optionProps.label.toLowerCase().includes(inputValue.toLowerCase())
+    ) {
+      // must be alias
+      label += " (alias)";
+    }
+
+    if (label != optionProps.data.label) {
+      thisOptionProps = {
+        ...optionProps,
+        children: label,
+      };
+    }
+
+    return <reactSelectComponents.Option {...thisOptionProps} />;
+  };
+
+  const filterOption = (option: Option, rawInput: string): boolean => {
+    if (!rawInput) {
+      return true;
+    }
+
+    const input = rawInput.toLowerCase();
+    const optionVal = option.label.toLowerCase();
+
+    if (optionVal.includes(input)) {
+      return true;
+    }
+
+    // search for performer aliases
+    const aliases = performerAliases[option.value];
+    return aliases && aliases.some((a) => a.toLowerCase().includes(input));
+  };
+
+  const isValidNewOption = (
+    inputValue: string,
+    value: ValueType<Option, boolean>,
+    options: OptionsType<Option> | GroupedOptionsType<Option>
+  ) => {
+    if (!inputValue) {
+      return false;
+    }
+
+    if (
+      (options as OptionsType<Option>).some((o: Option) => {
+        return o.label.toLowerCase() === inputValue.toLowerCase();
+      })
+    ) {
+      return false;
+    }
+
+    if (allAliases.some((a) => a.toLowerCase() === inputValue.toLowerCase())) {
+      return false;
+    }
+
+    return true;
+  };
 
   const onCreate = async (name: string) => {
     const result = await createPerformer({
@@ -537,6 +644,9 @@ export const PerformerSelect: React.FC<IFilterProps> = (props) => {
   return (
     <FilterSelectComponent
       {...props}
+      filterOption={filterOption}
+      isValidNewOption={isValidNewOption}
+      components={{ Option: PerformerOption }}
       isMulti={props.isMulti ?? false}
       creatable={props.creatable ?? defaultCreatable}
       onCreate={onCreate}
@@ -763,8 +873,10 @@ export const TagSelect: React.FC<IFilterProps & { excludeIds?: string[] }> = (
       };
     }
 
+    const id = optionProps.data.__isNew__ ? "" : optionProps.data.value;
+
     return (
-      <TagPopover id={optionProps.data.value}>
+      <TagPopover id={id}>
         <reactSelectComponents.Option {...thisOptionProps} />
       </TagPopover>
     );
