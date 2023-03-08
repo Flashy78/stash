@@ -31,7 +31,6 @@ const sortByOptions = [
 const displayModeOptions = [DisplayMode.Wall];
 const criterionOptions = [
   createStringCriterionOption("title"),
-  RatingCriterionOption,
   createMandatoryNumberCriterionOption("o_counter"),
   ResolutionCriterionOption,
   TagsCriterionOption,
