@@ -64,3 +64,9 @@ node_modules
 dist
 .DS_Store
 /.local
+
+# Local Dev Files
+dev.txt
+config.yml
+icon.png
+stash-go.*

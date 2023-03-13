@@ -34,7 +34,7 @@ RUN make build
 # Final Runnable Image
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates python3 py3-requests py3-requests-toolbelt py3-lxml py3-pip ffmpeg vips-tools ruby \
-    && pip install mechanicalsoup cloudscraper bencoder.pyx \
+    && pip install mechanicalsoup cloudscraper bencoder.pyx pystashlib \
     && gem install faraday
 COPY --from=backend /stash/stash /usr/bin/
 ENV STASH_CONFIG_FILE=/root/.stash/config.yml
