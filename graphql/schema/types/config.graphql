@@ -6,6 +6,8 @@ input SetupInput {
   databaseFile: String!
   """Empty to indicate default"""
   generatedLocation: String!
+  """Empty to indicate default"""
+  cacheLocation: String!
 }
 
 enum StreamingResolutionEnum {
@@ -65,10 +67,30 @@ input ConfigGeneralInput {
   previewExcludeEnd: String
   """Preset when generating preview"""
   previewPreset: PreviewPreset
+  """Transcode Hardware Acceleration"""
+  transcodeHardwareAcceleration: Boolean
   """Max generated transcode size"""
   maxTranscodeSize: StreamingResolutionEnum
   """Max streaming transcode size"""
   maxStreamingTranscodeSize: StreamingResolutionEnum
+  
+  """ffmpeg transcode input args - injected before input file
+  These are applied to generated transcodes (previews and transcodes)"""
+  transcodeInputArgs: [String!]
+  """ffmpeg transcode output args - injected before output file
+  These are applied to generated transcodes (previews and transcodes)"""
+  transcodeOutputArgs: [String!]
+
+  """ffmpeg stream input args - injected before input file
+  These are applied when live transcoding"""
+  liveTranscodeInputArgs: [String!]
+  """ffmpeg stream output args - injected before output file
+  These are applied when live transcoding"""
+  liveTranscodeOutputArgs: [String!]
+
+  """whether to include range in generated funscript heatmaps"""
+  drawFunscriptHeatmapRange: Boolean
+
   """Write image thumbnails to disk when generating on the fly"""
   writeImageThumbnails: Boolean
   """Username"""
@@ -89,6 +111,8 @@ input ConfigGeneralInput {
   logAccess: Boolean
   """True if galleries should be created from folders with images"""
   createGalleriesFromFolders: Boolean
+  """Regex used to identify images as gallery covers"""
+  galleryCoverRegex: String  
   """Array of video file extensions"""
   videoExtensions: [String!]
   """Array of image file extensions"""
@@ -148,10 +172,30 @@ type ConfigGeneralResult {
   previewExcludeEnd: String!
   """Preset when generating preview"""
   previewPreset: PreviewPreset!
+  """Transcode Hardware Acceleration"""
+  transcodeHardwareAcceleration: Boolean!
   """Max generated transcode size"""
   maxTranscodeSize: StreamingResolutionEnum
   """Max streaming transcode size"""
   maxStreamingTranscodeSize: StreamingResolutionEnum
+
+  """ffmpeg transcode input args - injected before input file
+  These are applied to generated transcodes (previews and transcodes)"""
+  transcodeInputArgs: [String!]!
+  """ffmpeg transcode output args - injected before output file
+  These are applied to generated transcodes (previews and transcodes)"""
+  transcodeOutputArgs: [String!]!
+
+  """ffmpeg stream input args - injected before input file
+  These are applied when live transcoding"""
+  liveTranscodeInputArgs: [String!]!
+  """ffmpeg stream output args - injected before output file
+  These are applied when live transcoding"""
+  liveTranscodeOutputArgs: [String!]!
+
+  """whether to include range in generated funscript heatmaps"""
+  drawFunscriptHeatmapRange: Boolean!
+
   """Write image thumbnails to disk when generating on the fly"""
   writeImageThumbnails: Boolean!
   """API Key"""
@@ -180,6 +224,8 @@ type ConfigGeneralResult {
   galleryExtensions: [String!]!
   """True if galleries should be created from folders with images"""
   createGalleriesFromFolders: Boolean!
+  """Regex used to identify images as gallery covers"""
+  galleryCoverRegex: String!
   """Array of file regexp to exclude from Video Scans"""
   excludes: [String!]!
   """Array of file regexp to exclude from Image Scans"""

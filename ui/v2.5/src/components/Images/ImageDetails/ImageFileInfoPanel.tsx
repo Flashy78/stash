@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Accordion, Button, Card } from "react-bootstrap";
 import { FormattedMessage, FormattedNumber, FormattedTime } from "react-intl";
-import { TruncatedText } from "src/components/Shared";
-import DeleteFilesDialog from "src/components/Shared/DeleteFilesDialog";
+import { TruncatedText } from "src/components/Shared/TruncatedText";
+import { DeleteFilesDialog } from "src/components/Shared/DeleteFilesDialog";
 import * as GQL from "src/core/generated-graphql";
 import { mutateImageSetPrimaryFile } from "src/core/StashService";
-import { useToast } from "src/hooks";
-import { TextUtils } from "src/utils";
+import { useToast } from "src/hooks/Toast";
+import TextUtils from "src/utils/text";
 import { TextField, URLField } from "src/utils/field";
 
 interface IFileInfoPanelProps {
@@ -57,45 +57,12 @@ const FileInfoPanel: React.FC<IFileInfoPanelProps> = (
             </dd>
           </>
         )}
-        <TextField id="media_info.checksum" value={checksum?.value} truncate />
-        <URLField
-          id="path"
-          url={`file://${props.file.path}`}
-          value={`file://${props.file.path}`}
-          truncate
-        />
-        {renderFileSize()}
-        <TextField id="file_mod_time">
-          <FormattedTime
-            dateStyle="medium"
-            timeStyle="medium"
-            value={props.file.mod_time ?? 0}
-          />
-        </TextField>
         <TextField
           id="dimensions"
           value={`${props.file.width} x ${props.file.height}`}
           truncate
         />
       </dl>
-      {props.ofMany && props.onSetPrimaryFile && !props.primary && (
-        <div>
-          <Button
-            className="edit-button"
-            disabled={props.loading}
-            onClick={props.onSetPrimaryFile}
-          >
-            <FormattedMessage id="actions.make_primary" />
-          </Button>
-          <Button
-            variant="danger"
-            disabled={props.loading}
-            onClick={props.onDeleteFile}
-          >
-            <FormattedMessage id="actions.delete_file" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
@@ -118,7 +85,24 @@ export const ImageFileInfoPanel: React.FC<IImageFileInfoPanelProps> = (
   }
 
   if (props.image.files.length === 1) {
-    return <FileInfoPanel file={props.image.files[0]} />;
+    return (
+      <>
+        <FileInfoPanel file={props.image.files[0]} />
+
+        {props.image.url ? (
+          <dl className="container image-file-info details-list">
+            <URLField
+              id="media_info.downloaded_from"
+              url={TextUtils.sanitiseURL(props.image.url)}
+              value={TextUtils.domainFromURL(props.image.url)}
+              truncate
+            />
+          </dl>
+        ) : (
+          ""
+        )}
+      </>
+    );
   }
 
   async function onSetPrimaryFile(fileID: string) {

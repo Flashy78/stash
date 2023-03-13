@@ -1,6 +1,22 @@
+fragment ScrapedStudioData on ScrapedStudio {
+  stored_id
+  name
+  url
+  parent {
+    stored_id
+    name
+    url
+    image
+    remote_site_id
+  }
+  image
+  remote_site_id
+}
+
 fragment ScrapedPerformerData on ScrapedPerformer {
   stored_id
   name
+  disambiguation
   gender
   url
   twitter
@@ -30,6 +46,7 @@ fragment ScrapedPerformerData on ScrapedPerformer {
 fragment ScrapedScenePerformerData on ScrapedPerformer {
   stored_id
   name
+  disambiguation
   gender
   url
   twitter
@@ -95,6 +112,14 @@ fragment ScrapedSceneStudioData on ScrapedStudio {
   stored_id
   name
   url
+  parent {
+    stored_id
+    name
+    url
+    image
+    remote_site_id
+  }
+  image
   remote_site_id
 }
 

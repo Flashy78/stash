@@ -4,6 +4,7 @@ import {
   createStringCriterionOption,
   NullNumberCriterionOption,
   createMandatoryTimestampCriterionOption,
+  createDateCriterionOption,
 } from "./criteria/criterion";
 import { PerformerFavoriteCriterionOption } from "./criteria/favorite";
 import { ImageIsMissingCriterionOption } from "./criteria/is-missing";
@@ -22,14 +23,13 @@ const defaultSortBy = "title";
 
 const sortByOptions = [
   "o_counter",
-  "file_count",
+  "date",
   ...MediaSortByOptions,
 ].map(ListFilterOptions.createSortBy);
 
 const displayModeOptions = [DisplayMode.Wall];
 const criterionOptions = [
   createStringCriterionOption("title"),
-  RatingCriterionOption,
   createMandatoryNumberCriterionOption("o_counter"),
   ResolutionCriterionOption,
   TagsCriterionOption,
@@ -37,9 +37,7 @@ const criterionOptions = [
   createMandatoryNumberCriterionOption("performer_count"),
   createMandatoryNumberCriterionOption("performer_age"),
   StudiosCriterionOption,
-  createMandatoryNumberCriterionOption("file_count"),
-  createMandatoryTimestampCriterionOption("created_at"),
-  createMandatoryTimestampCriterionOption("updated_at"),
+  createDateCriterionOption("date"),
 ];
 export const ImageListFilterOptions = new ListFilterOptions(
   defaultSortBy,

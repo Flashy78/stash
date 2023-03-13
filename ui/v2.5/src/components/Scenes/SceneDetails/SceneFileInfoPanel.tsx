@@ -7,13 +7,15 @@ import {
   useIntl,
 } from "react-intl";
 import { useHistory } from "react-router-dom";
-import { TruncatedText } from "src/components/Shared";
-import DeleteFilesDialog from "src/components/Shared/DeleteFilesDialog";
-import ReassignFilesDialog from "src/components/Shared/ReassignFilesDialog";
+import { TruncatedText } from "src/components/Shared/TruncatedText";
+import { DeleteFilesDialog } from "src/components/Shared/DeleteFilesDialog";
+import { ReassignFilesDialog } from "src/components/Shared/ReassignFilesDialog";
 import * as GQL from "src/core/generated-graphql";
 import { mutateSceneSetPrimaryFile } from "src/core/StashService";
-import { useToast } from "src/hooks";
-import { NavUtils, TextUtils, getStashboxBase } from "src/utils";
+import { useToast } from "src/hooks/Toast";
+import NavUtils from "src/utils/navigation";
+import TextUtils from "src/utils/text";
+import { getStashboxBase } from "src/utils/stashbox";
 import { TextField, URLField } from "src/utils/field";
 
 interface IFileInfoPanelProps {
@@ -66,22 +68,6 @@ const FileInfoPanel: React.FC<IFileInfoPanelProps> = (
   return (
     <div>
       <dl className="container scene-file-info details-list">
-        {props.primary && (
-          <>
-            <dt></dt>
-            <dd className="primary-file">
-              <FormattedMessage id="primary_file" />
-            </dd>
-          </>
-        )}
-        {renderFileSize()}
-        <TextField id="file_mod_time">
-          <FormattedTime
-            dateStyle="medium"
-            timeStyle="medium"
-            value={props.file.mod_time ?? 0}
-          />
-        </TextField>
         <TextField
           id="duration"
           value={TextUtils.secondsToTimestamp(props.file.duration ?? 0)}
@@ -119,34 +105,6 @@ const FileInfoPanel: React.FC<IFileInfoPanelProps> = (
           truncate
         />
       </dl>
-      {props.ofMany && props.onSetPrimaryFile && !props.primary && (
-        <div>
-          <Button
-            className="edit-button"
-            disabled={props.loading}
-            onClick={props.onSetPrimaryFile}
-          >
-            <FormattedMessage id="actions.make_primary" />
-          </Button>
-          <Button
-            className="edit-button"
-            disabled={props.loading}
-            onClick={props.onReassign}
-          >
-            <FormattedMessage id="actions.reassign" />
-          </Button>
-          <Button className="edit-button" onClick={onSplit}>
-            <FormattedMessage id="actions.split" />
-          </Button>
-          <Button
-            variant="danger"
-            disabled={props.loading}
-            onClick={props.onDeleteFile}
-          >
-            <FormattedMessage id="actions.delete_file" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
@@ -161,12 +119,9 @@ export const SceneFileInfoPanel: React.FC<ISceneFileInfoPanelProps> = (
   const Toast = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [deletingFile, setDeletingFile] = useState<
-    GQL.VideoFileDataFragment | undefined
-  >();
-  const [reassigningFile, setReassigningFile] = useState<
-    GQL.VideoFileDataFragment | undefined
-  >();
+  const [deletingFile, setDeletingFile] = useState<GQL.VideoFileDataFragment>();
+  const [reassigningFile, setReassigningFile] =
+    useState<GQL.VideoFileDataFragment>();
 
   function renderStashIDs() {
     if (!props.scene.stash_ids.length) {

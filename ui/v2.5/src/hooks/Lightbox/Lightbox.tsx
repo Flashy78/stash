@@ -10,10 +10,12 @@ import {
 } from "react-bootstrap";
 import cx from "classnames";
 import Mousetrap from "mousetrap";
-import debounce from "lodash-es/debounce";
 
-import { Icon, LoadingIndicator } from "src/components/Shared";
-import { useInterval, usePageVisibility, useToast } from "src/hooks";
+import { Icon } from "src/components/Shared/Icon";
+import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
+import useInterval from "../Interval";
+import usePageVisibility from "../PageVisibility";
+import { useToast } from "../Toast";
 import { FormattedMessage, useIntl } from "react-intl";
 import { LightboxImage } from "./LightboxImage";
 import { ConfigurationContext } from "../Config";
@@ -42,6 +44,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
+import { useDebounce } from "../debounce";
 
 const CLASSNAME = "Lightbox";
 const CLASSNAME_HEADER = `${CLASSNAME}-header`;
@@ -119,10 +122,8 @@ export const LightboxComponent: React.FC<IProps> = ({
   const Toast = useToast();
   const intl = useIntl();
   const { configuration: config } = React.useContext(ConfigurationContext);
-  const [
-    interfaceLocalForage,
-    setInterfaceLocalForage,
-  ] = useInterfaceLocalForage();
+  const [interfaceLocalForage, setInterfaceLocalForage] =
+    useInterfaceLocalForage();
 
   const lightboxSettings = interfaceLocalForage.data?.imageLightbox;
 
@@ -186,10 +187,8 @@ export const LightboxComponent: React.FC<IProps> = ({
     null
   );
 
-  const [
-    displayedSlideshowInterval,
-    setDisplayedSlideshowInterval,
-  ] = useState<string>((slideshowDelay / SECONDS_TO_MS).toString());
+  const [displayedSlideshowInterval, setDisplayedSlideshowInterval] =
+    useState<string>((slideshowDelay / SECONDS_TO_MS).toString());
 
   useEffect(() => {
     if (images !== oldImages.current && isSwitchingPage) {
@@ -198,8 +197,9 @@ export const LightboxComponent: React.FC<IProps> = ({
     }
   }, [isSwitchingPage, images, index]);
 
-  const disableInstantTransition = debounce(
+  const disableInstantTransition = useDebounce(
     () => setInstantTransition(false),
+    [],
     400
   );
 

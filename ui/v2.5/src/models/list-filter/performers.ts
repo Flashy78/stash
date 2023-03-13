@@ -46,6 +46,8 @@ const numberCriteria: CriterionType[] = [
 ];
 
 const stringCriteria: CriterionType[] = [
+  "name",
+  "disambiguation",
   "details",
   "country",
   "hair_color",
@@ -67,8 +69,6 @@ const criterionOptions = [
   ...stringCriteria.map((c) => createStringCriterionOption(c)),
   createDateCriterionOption("birthdate"),
   createDateCriterionOption("death_date"),
-  createMandatoryTimestampCriterionOption("created_at"),
-  createMandatoryTimestampCriterionOption("updated_at"),
 ];
 export const PerformerListFilterOptions = new ListFilterOptions(
   defaultSortBy,

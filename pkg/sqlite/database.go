@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"errors"
 	"fmt"
@@ -10,18 +9,30 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fvbommel/sortorder"
 	"github.com/golang-migrate/migrate/v4"
 	sqlite3mig "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jmoiron/sqlx"
-	sqlite3 "github.com/mattn/go-sqlite3"
 
 	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/logger"
 )
 
-var appSchemaVersion uint = 41
+const (
+	// Number of database connections to use
+	// The same value is used for both the maximum and idle limit,
+	// to prevent opening connections on the fly which has a notieable performance penalty.
+	// Fewer connections use less memory, more connections increase performance,
+	// but have diminishing returns.
+	// 10 was found to be a good tradeoff.
+	dbConns = 10
+	// Idle connection timeout, in seconds
+	// Closes a connection after a period of inactivity, which saves on memory and
+	// causes the sqlite -wal and -shm files to be automatically deleted.
+	dbConnTimeout = 30
+)
+
+var appSchemaVersion uint = 43
 
 //go:embed migrations/*.sql
 var migrationsBox embed.FS
@@ -52,13 +63,6 @@ func (e *MismatchedSchemaVersionError) Error() string {
 	return fmt.Sprintf("schema version %d is incompatible with required schema version %d", e.CurrentSchemaVersion, e.RequiredSchemaVersion)
 }
 
-const sqlite3Driver = "sqlite3ex"
-
-func init() {
-	// register custom driver with regexp function
-	registerCustomDriver()
-}
-
 type Database struct {
 	File      *FileStore
 	Folder    *FolderStore
@@ -66,6 +70,7 @@ type Database struct {
 	Gallery   *GalleryStore
 	Scene     *SceneStore
 	Performer *PerformerStore
+	Studio    *StudioStore
 
 	db     *sqlx.DB
 	dbPath string
@@ -86,6 +91,7 @@ func NewDatabase() *Database {
 		Image:     NewImageStore(fileStore),
 		Gallery:   NewGalleryStore(fileStore, folderStore),
 		Performer: NewPerformerStore(),
+		Studio:    NewStudioStore(),
 		lockChan:  make(chan struct{}, 1),
 	}
 
@@ -202,9 +208,9 @@ func (db *Database) open(disableForeignKeys bool) (*sqlx.DB, error) {
 	}
 
 	conn, err := sqlx.Open(sqlite3Driver, url)
-	conn.SetMaxOpenConns(25)
-	conn.SetMaxIdleConns(4)
-	conn.SetConnMaxLifetime(30 * time.Second)
+	conn.SetMaxOpenConns(dbConns)
+	conn.SetMaxIdleConns(dbConns)
+	conn.SetConnMaxIdleTime(dbConnTimeout * time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("db.Open(): %w", err)
 	}
@@ -212,7 +218,7 @@ func (db *Database) open(disableForeignKeys bool) (*sqlx.DB, error) {
 	return conn, nil
 }
 
-func (db *Database) Reset() error {
+func (db *Database) Remove() error {
 	databasePath := db.dbPath
 	err := db.Close()
 
@@ -234,6 +240,15 @@ func (db *Database) Reset() error {
 				return errors.New("Error removing database: " + err.Error())
 			}
 		}
+	}
+
+	return nil
+}
+
+func (db *Database) Reset() error {
+	databasePath := db.dbPath
+	if err := db.Remove(); err != nil {
+		return err
 	}
 
 	if err := db.Open(databasePath); err != nil {
@@ -265,6 +280,16 @@ func (db *Database) Backup(backupPath string) error {
 	return nil
 }
 
+func (db *Database) Anonymise(outPath string) error {
+	anon, err := NewAnonymiser(db, outPath)
+
+	if err != nil {
+		return err
+	}
+
+	return anon.Anonymise(context.Background())
+}
+
 func (db *Database) RestoreFromBackup(backupPath string) error {
 	logger.Infof("Restoring backup database %s into %s", backupPath, db.dbPath)
 	return os.Rename(backupPath, db.dbPath)
@@ -285,6 +310,16 @@ func (db *Database) DatabasePath() string {
 
 func (db *Database) DatabaseBackupPath(backupDirectoryPath string) string {
 	fn := fmt.Sprintf("%s.%d.%s", filepath.Base(db.dbPath), db.schemaVersion, time.Now().Format("20060102_150405"))
+
+	if backupDirectoryPath != "" {
+		return filepath.Join(backupDirectoryPath, fn)
+	}
+
+	return fn
+}
+
+func (db *Database) AnonymousDatabasePath(backupDirectoryPath string) string {
+	fn := fmt.Sprintf("%s.anonymous.%d.%s", filepath.Base(db.dbPath), db.schemaVersion, time.Now().Format("20060102_150405"))
 
 	if backupDirectoryPath != "" {
 		return filepath.Join(backupDirectoryPath, fn)
@@ -383,8 +418,14 @@ func (db *Database) RunMigrations() error {
 	}
 
 	// optimize database after migration
+	db.optimise()
+
+	return nil
+}
+
+func (db *Database) optimise() {
 	logger.Info("Optimizing database")
-	_, err = db.db.Exec("ANALYZE")
+	_, err := db.db.Exec("ANALYZE")
 	if err != nil {
 		logger.Warnf("error while performing post-migration optimization: %v", err)
 	}
@@ -392,8 +433,6 @@ func (db *Database) RunMigrations() error {
 	if err != nil {
 		logger.Warnf("error while performing post-migration vacuum: %v", err)
 	}
-
-	return nil
 }
 
 func (db *Database) runCustomMigrations(ctx context.Context, fns []customMigrationFunc) error {
@@ -419,38 +458,4 @@ func (db *Database) runCustomMigration(ctx context.Context, fn customMigrationFu
 	}
 
 	return nil
-}
-
-func registerCustomDriver() {
-	sql.Register(sqlite3Driver,
-		&sqlite3.SQLiteDriver{
-			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-				funcs := map[string]interface{}{
-					"regexp":            regexFn,
-					"durationToTinyInt": durationToTinyIntFn,
-				}
-
-				for name, fn := range funcs {
-					if err := conn.RegisterFunc(name, fn, true); err != nil {
-						return fmt.Errorf("error registering function %s: %s", name, err.Error())
-					}
-				}
-
-				// COLLATE NATURAL_CS - Case sensitive natural sort
-				err := conn.RegisterCollation("NATURAL_CS", func(s string, s2 string) int {
-					if sortorder.NaturalLess(s, s2) {
-						return -1
-					} else {
-						return 1
-					}
-				})
-
-				if err != nil {
-					return fmt.Errorf("error registering natural sort collation: %v", err)
-				}
-
-				return nil
-			},
-		},
-	)
 }

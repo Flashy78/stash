@@ -5,16 +5,18 @@ import { Button, Collapse, Form, InputGroup } from "react-bootstrap";
 import { FormattedMessage } from "react-intl";
 
 import { sortPerformers } from "src/core/performers";
-import {
-  Icon,
-  OperationButton,
-  TagLink,
-  TruncatedText,
-} from "src/components/Shared";
+import { Icon } from "src/components/Shared/Icon";
+import { OperationButton } from "src/components/Shared/OperationButton";
+import { TagLink } from "src/components/Shared/TagLink";
+import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { parsePath, prepareQueryString } from "src/components/Tagger/utils";
 import { ScenePreview } from "src/components/Scenes/SceneCard";
 import { TaggerStateContext } from "../context";
-import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronDown,
+  faChevronUp,
+  faImage,
+} from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 
 interface ITaggerSceneDetails {
@@ -86,6 +88,7 @@ interface ITaggerScene {
   doSceneQuery?: (queryString: string) => void;
   scrapeSceneFragment?: (scene: GQL.SlimSceneDataFragment) => void;
   loading?: boolean;
+  showLightboxImage: (imagePath: string) => void;
 }
 
 export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
@@ -96,6 +99,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
   scrapeSceneFragment,
   errorMessage,
   children,
+  showLightboxImage,
 }) => {
   const { config } = useContext(TaggerStateContext);
   const [queryString, setQueryString] = useState<string>("");
@@ -188,6 +192,27 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
     }
   }
 
+  function maybeRenderSpriteIcon() {
+    if (scene.paths.sprite && scene.paths.sprite.length > 0) {
+      // Even if a scene doesn't have a sprite generated, the path will be
+      // http://localhost:9999/scene/_sprite.jpg so check for that case
+      const spriteParts = scene.paths.sprite.split("/");
+      const filename = spriteParts.pop();
+      if (filename?.includes("_sprite") && filename.split("_")[0].length > 0) {
+        // Assume there is a hash before _sprite.jpg in the url.
+        return (
+          <Button
+            className="p-0"
+            variant="link"
+            onClick={() => showLightboxImage(scene.paths.sprite ?? "")}
+          >
+            <Icon icon={faImage} />
+          </Button>
+        );
+      }
+    }
+  }
+
   return (
     <div key={scene.id} className="mt-3 search-item">
       <div className="row">
@@ -201,6 +226,9 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
                 soundActive={false}
               />
             </Link>
+            <div className="d-flex justify-content-center">
+              {maybeRenderSpriteIcon()}
+            </div>
           </div>
           <Link to={url} className="scene-link overflow-hidden">
             <TruncatedText text={objectTitle(scene)} lineCount={2} />

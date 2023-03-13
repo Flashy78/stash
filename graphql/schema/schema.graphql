@@ -80,6 +80,9 @@ type Query {
   """Scrape for multiple scenes"""
   scrapeMultiScenes(source: ScraperSourceInput!, input: ScrapeMultiScenesInput!): [[ScrapedScene!]!]!
 
+  """Scrape for a single studio"""
+  scrapeSingleStudio(source: ScraperSourceInput!, input: ScrapeSingleStudioInput!): [ScrapedStudio!]!
+
   """Scrape for a single performer"""
   scrapeSinglePerformer(source: ScraperSourceInput!, input: ScrapeSinglePerformerInput!): [ScrapedPerformer!]!
   """Scrape for multiple performers"""
@@ -96,7 +99,7 @@ type Query {
 
   """Scrapes a complete performer record based on a URL"""
   scrapePerformerURL(url: String!): ScrapedPerformer
-  """Scrapes a complete performer record based on a URL"""
+  """Scrapes a complete scene record based on a URL"""
   scrapeSceneURL(url: String!): ScrapedScene
   """Scrapes a complete gallery record based on a URL"""
   scrapeGalleryURL(url: String!): ScrapedGallery
@@ -144,6 +147,10 @@ type Query {
 
   # Get everything
 
+  allScenes: [Scene!]!
+  allSceneMarkers: [SceneMarker!]!
+  allImages: [Image!]!
+  allGalleries: [Gallery!]!
   allPerformers: [Performer!]!
   allStudios: [Studio!]!
   allMovies: [Movie!]!
@@ -155,7 +162,7 @@ type Query {
   version: Version!
 
   # LatestVersion
-  latestversion: ShortVersion!
+  latestversion: LatestVersion!
 }
 
 type Mutation {
@@ -281,6 +288,9 @@ type Mutation {
   metadataIdentify(input: IdentifyMetadataInput!): ID!
   """Migrate generated files for the current hash naming"""
   migrateHashNaming: ID!
+  
+  """Anonymise the database in a separate file. Optionally returns a link to download the database file"""
+  anonymiseDatabase(input: AnonymiseDatabaseInput!): String
 
   """Reload scrapers"""
   reloadScrapers: Boolean!
@@ -304,7 +314,9 @@ type Mutation {
   backupDatabase(input: BackupDatabaseInput!): String
 
   """Run batch performer tag task. Returns the job ID."""
-  stashBoxBatchPerformerTag(input: StashBoxBatchPerformerTagInput!): String!
+  stashBoxBatchPerformerTag(input: StashBoxBatchTagInput!): String!
+  """Run batch studio tag task. Returns the job ID."""
+  stashBoxBatchStudioTag(input: StashBoxBatchTagInput!): String!
 
   """Enables DLNA for an optional duration. Has no effect if DLNA is enabled by default"""
   enableDLNA(input: EnableDLNAInput!): Boolean!

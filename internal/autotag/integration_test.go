@@ -5,7 +5,6 @@ package autotag
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -86,8 +85,7 @@ func TestMain(m *testing.M) {
 func createPerformer(ctx context.Context, pqb models.PerformerWriter) error {
 	// create the performer
 	performer := models.Performer{
-		Checksum: testName,
-		Name:     testName,
+		Name: testName,
 	}
 
 	err := pqb.Create(ctx, &performer)
@@ -98,14 +96,16 @@ func createPerformer(ctx context.Context, pqb models.PerformerWriter) error {
 	return nil
 }
 
-func createStudio(ctx context.Context, qb models.StudioWriter, name string) (*models.Studio, error) {
+func createStudio(ctx context.Context, qb models.StudioWriter, name string) (*int, error) {
 	// create the studio
-	studio := models.Studio{
-		Checksum: name,
-		Name:     sql.NullString{Valid: true, String: name},
+	studioDBInput := models.StudioDBInput{
+		StudioCreate: &models.Studio{
+			Checksum: name,
+			Name:     name,
+		},
 	}
 
-	return qb.Create(ctx, studio)
+	return qb.Create(ctx, studioDBInput)
 }
 
 func createTag(ctx context.Context, qb models.TagWriter) error {
@@ -496,12 +496,11 @@ func populateDB() error {
 		}
 
 		// create existing studio
-		existingStudio, err := createStudio(ctx, r.Studio, existingStudioName)
+		createdID, err := createStudio(ctx, r.Studio, existingStudioName)
 		if err != nil {
 			return err
 		}
-
-		existingStudioID = existingStudio.ID
+		existingStudioID = *createdID
 
 		err = createTag(ctx, r.Tag)
 		if err != nil {
@@ -548,6 +547,9 @@ func TestParsePerformerScenes(t *testing.T) {
 
 	for _, p := range performers {
 		if err := withDB(func(ctx context.Context) error {
+			if err := p.LoadAliases(ctx, r.Performer); err != nil {
+				return err
+			}
 			return tagger.PerformerScenes(ctx, p, nil, r.Scene)
 		}); err != nil {
 			t.Errorf("Error auto-tagging performers: %s", err)
@@ -715,6 +717,9 @@ func TestParsePerformerImages(t *testing.T) {
 
 	for _, p := range performers {
 		if err := withDB(func(ctx context.Context) error {
+			if err := p.LoadAliases(ctx, r.Performer); err != nil {
+				return err
+			}
 			return tagger.PerformerImages(ctx, p, nil, r.Image)
 		}); err != nil {
 			t.Errorf("Error auto-tagging performers: %s", err)
@@ -884,6 +889,9 @@ func TestParsePerformerGalleries(t *testing.T) {
 
 	for _, p := range performers {
 		if err := withDB(func(ctx context.Context) error {
+			if err := p.LoadAliases(ctx, r.Performer); err != nil {
+				return err
+			}
 			return tagger.PerformerGalleries(ctx, p, nil, r.Gallery)
 		}); err != nil {
 			t.Errorf("Error auto-tagging performers: %s", err)

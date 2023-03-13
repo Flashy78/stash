@@ -22,8 +22,6 @@ const criterionOptions = [
   createStringCriterionOption("synopsis"),
   PerformersCriterionOption,
   createDateCriterionOption("date"),
-  createMandatoryTimestampCriterionOption("created_at"),
-  createMandatoryTimestampCriterionOption("updated_at"),
 ];
 
 export const MovieListFilterOptions = new ListFilterOptions(

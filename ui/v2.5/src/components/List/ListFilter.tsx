@@ -1,6 +1,11 @@
-import debounce from "lodash-es/debounce";
 import cloneDeep from "lodash-es/cloneDeep";
-import React, { HTMLAttributes, useEffect, useRef, useState } from "react";
+import React, {
+  HTMLAttributes,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import cx from "classnames";
 import Mousetrap from "mousetrap";
 import { SortDirectionEnum } from "src/core/generated-graphql";
@@ -17,12 +22,12 @@ import {
   Overlay,
 } from "react-bootstrap";
 
-import { Icon } from "src/components/Shared";
+import { Icon } from "../Shared/Icon";
 import { ListFilterModel } from "src/models/list-filter/filter";
-import { useFocus } from "src/utils";
+import useFocus from "src/utils/focus";
 import { ListFilterOptions } from "src/models/list-filter/filter-options";
 import { FormattedMessage, useIntl } from "react-intl";
-import { PersistanceLevel } from "src/hooks/ListHook";
+import { PersistanceLevel } from "./ItemList";
 import { SavedFilterList } from "./SavedFilterList";
 import {
   faBookmark,
@@ -33,6 +38,7 @@ import {
   faRandom,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
+import { useDebounce } from "src/hooks/debounce";
 
 const maxPageSize = 1000;
 interface IListFilterProps {
@@ -62,12 +68,26 @@ export const ListFilter: React.FC<IListFilterProps> = ({
   const perPageSelect = useRef(null);
   const [perPageInput, perPageFocus] = useFocus();
 
-  const searchCallback = debounce((value: string) => {
-    const newFilter = cloneDeep(filter);
-    newFilter.searchTerm = value;
-    newFilter.currentPage = 1;
-    onFilterUpdate(newFilter);
-  }, 500);
+  const searchQueryUpdated = useCallback(
+    (value: string) => {
+      const newFilter = cloneDeep(filter);
+      newFilter.searchTerm = value;
+      newFilter.currentPage = 1;
+      onFilterUpdate(newFilter);
+    },
+    [filter, onFilterUpdate]
+  );
+
+  const searchCallback = useDebounce(
+    (value: string) => {
+      const newFilter = cloneDeep(filter);
+      newFilter.searchTerm = value;
+      newFilter.currentPage = 1;
+      onFilterUpdate(newFilter);
+    },
+    [filter, onFilterUpdate],
+    500
+  );
 
   const intl = useIntl();
 
@@ -90,6 +110,14 @@ export const ListFilter: React.FC<IListFilterProps> = ({
       perPageFocus();
     }
   }, [customPageSizeShowing, perPageFocus]);
+
+  // clear search input when filter is cleared
+  useEffect(() => {
+    if (!filter.searchTerm) {
+      queryRef.current.value = "";
+      setQueryClearShowing(false);
+    }
+  }, [filter.searchTerm, queryRef]);
 
   function onChangePageSize(val: string) {
     if (val === "custom") {
@@ -124,7 +152,7 @@ export const ListFilter: React.FC<IListFilterProps> = ({
 
   function onClearQuery() {
     queryRef.current.value = "";
-    searchCallback("");
+    searchQueryUpdated("");
     setQueryFocus();
     setQueryClearShowing(false);
   }

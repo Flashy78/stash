@@ -3,10 +3,11 @@ import { Button, Card, Form, InputGroup, ProgressBar } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
-import { useLocalForage } from "src/hooks";
+import { useLocalForage } from "src/hooks/LocalForage";
 
 import * as GQL from "src/core/generated-graphql";
-import { LoadingIndicator, Modal } from "src/components/Shared";
+import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
+import { ModalComponent } from "src/components/Shared/Modal";
 import {
   stashBoxPerformerQuery,
   useJobsSubscribe,
@@ -368,7 +369,14 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
               to={`/performers/${performer.id}`}
               className={`${CLASSNAME}-header`}
             >
-              <h2>{performer.name}</h2>
+              <h2>
+                {performer.name}
+                {performer.disambiguation && (
+                  <span className="performer-disambiguation">
+                    {` (${performer.disambiguation})`}
+                  </span>
+                )}
+              </h2>
             </Link>
             {mainContent}
             <div className="sub-content text-left">{subContent}</div>
@@ -380,7 +388,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
 
   return (
     <Card>
-      <Modal
+      <ModalComponent
         show={showBatchUpdate}
         icon={faTags}
         header={intl.formatMessage({
@@ -410,7 +418,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             type="radio"
             name="performer-query"
             label={<FormattedMessage id="performer_tagger.current_page" />}
-            defaultChecked
+            defaultChecked={!queryAll}
             onChange={() => setQueryAll(false)}
           />
           <Form.Check
@@ -420,7 +428,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             label={intl.formatMessage({
               id: "performer_tagger.query_all_performers_in_the_database",
             })}
-            defaultChecked={false}
+            defaultChecked={queryAll}
             onChange={() => setQueryAll(true)}
           />
         </Form.Group>
@@ -437,7 +445,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             label={intl.formatMessage({
               id: "performer_tagger.untagged_performers",
             })}
-            defaultChecked
+            defaultChecked={!refresh}
             onChange={() => setRefresh(false)}
           />
           <Form.Text>
@@ -450,7 +458,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             label={intl.formatMessage({
               id: "performer_tagger.refresh_tagged_performers",
             })}
-            defaultChecked={false}
+            defaultChecked={refresh}
             onChange={() => setRefresh(true)}
           />
           <Form.Text>
@@ -469,8 +477,8 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             }}
           />
         </b>
-      </Modal>
-      <Modal
+      </ModalComponent>
+      <ModalComponent
         show={showBatchAdd}
         icon={faStar}
         header={intl.formatMessage({
@@ -501,7 +509,7 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
         <Form.Text>
           <FormattedMessage id="performer_tagger.any_names_entered_will_be_queried" />
         </Form.Text>
-      </Modal>
+      </ModalComponent>
       <div className="ml-auto mb-3">
         <Button onClick={() => setShowBatchAdd(true)}>
           <FormattedMessage id="performer_tagger.batch_add_performers" />
@@ -574,9 +582,10 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
 
       if (names.length > 0) {
         const ret = await mutateStashBoxBatchPerformerTag({
-          performer_names: names,
+          names: names,
           endpoint: selectedEndpointIndex,
           refresh: false,
+          createParent: false,
         });
 
         setBatchJobID(ret.data?.stashBoxBatchPerformerTag);
@@ -587,10 +596,11 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
   async function batchUpdate(ids: string[] | undefined, refresh: boolean) {
     if (config && selectedEndpoint) {
       const ret = await mutateStashBoxBatchPerformerTag({
-        performer_ids: ids,
+        ids: ids,
         endpoint: selectedEndpointIndex,
         refresh,
         exclude_fields: config.excludedPerformerFields ?? [],
+        createParent: false,
       });
 
       setBatchJobID(ret.data?.stashBoxBatchPerformerTag);

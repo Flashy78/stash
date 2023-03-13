@@ -31,8 +31,13 @@ func (r *mutationResolver) SubmitStashBoxFingerprints(ctx context.Context, input
 	return client.SubmitStashBoxFingerprints(ctx, input.SceneIds, boxes[input.StashBoxIndex].Endpoint)
 }
 
-func (r *mutationResolver) StashBoxBatchPerformerTag(ctx context.Context, input manager.StashBoxBatchPerformerTagInput) (string, error) {
+func (r *mutationResolver) StashBoxBatchPerformerTag(ctx context.Context, input manager.StashBoxBatchTagInput) (string, error) {
 	jobID := manager.GetInstance().StashBoxBatchPerformerTag(ctx, input)
+	return strconv.Itoa(jobID), nil
+}
+
+func (r *mutationResolver) StashBoxBatchStudioTag(ctx context.Context, input manager.StashBoxBatchTagInput) (string, error) {
+	jobID := manager.GetInstance().StashBoxBatchStudioTag(ctx, input)
 	return strconv.Itoa(jobID), nil
 }
 
@@ -58,9 +63,16 @@ func (r *mutationResolver) SubmitStashBoxSceneDraft(ctx context.Context, input S
 			return err
 		}
 
-		filepath := manager.GetInstance().Paths.Scene.GetScreenshotPath(scene.GetHash(config.GetInstance().GetVideoFileNamingAlgorithm()))
+		if scene == nil {
+			return fmt.Errorf("scene with id %d not found", id)
+		}
 
-		res, err = client.SubmitSceneDraft(ctx, scene, boxes[input.StashBoxIndex].Endpoint, filepath)
+		cover, err := r.sceneService.GetCover(ctx, scene)
+		if err != nil {
+			return fmt.Errorf("getting scene cover: %w", err)
+		}
+
+		res, err = client.SubmitSceneDraft(ctx, scene, boxes[input.StashBoxIndex].Endpoint, cover)
 		return err
 	})
 

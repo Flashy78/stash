@@ -106,7 +106,9 @@ export function makeCriteria(
     case "resume_time":
     case "duration":
     case "play_duration":
-      return new DurationCriterion(new NumberCriterionOption(type, type));
+      return new DurationCriterion(
+        new MandatoryNumberCriterionOption(type, type)
+      );
     case "favorite":
       return new FavoriteCriterion();
     case "hasMarkers":
@@ -192,6 +194,7 @@ export function makeCriteria(
     case "director":
     case "synopsis":
     case "description":
+    case "disambiguation":
       return new StringCriterion(new StringCriterionOption(type, type));
     case "scene_code":
       return new StringCriterion(new StringCriterionOption(type, type, "code"));
