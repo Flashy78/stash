@@ -277,7 +277,7 @@ validate-backend: lint it
 # locally builds and tags a 'stash/build' docker image
 .PHONY: docker-build
 docker-build: pre-build
-	docker build --build-arg GITHASH=$(GITHASH) --build-arg STASH_VERSION=$(STASH_VERSION) -t stash/build -f docker/build/x86_64/Dockerfile .
+	docker build --build-arg GITHASH=$(GITHASH) --build-arg STASH_VERSION=$(STASH_VERSION) -t stash/build:read-only -f docker/build/x86_64/Dockerfile .
 
 # locally builds and tags a 'stash/cuda-build' docker image
 .PHONY: docker-cuda-build
