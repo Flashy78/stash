@@ -1412,7 +1412,7 @@ func (qb *SceneStore) setSceneSort(query *queryBuilder, findFilter *models.FindF
 		// special handling for path
 		addFileTable()
 		addFolderTable()
-		query.sortAndPagination += fmt.Sprintf(" ORDER BY folders.path %s, files.basename %[1]s", direction)
+		query.sortAndPagination += fmt.Sprintf(" ORDER BY folders.path COLLATE NOCASE %s, files.basename COLLATE NOCASE %[1]s", direction)
 	case "perceptual_similarity":
 		// special handling for phash
 		addFileTable()
