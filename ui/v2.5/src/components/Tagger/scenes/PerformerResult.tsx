@@ -52,6 +52,13 @@ const PerformerResult: React.FC<IPerformerResultProps> = ({
     setSelectedID(undefined);
   };
 
+  function renderPerformerName(name: string | undefined, disambig: string | null | undefined) {
+    if (disambig) {
+      return name + " (" + disambig + ")";
+    }
+    return name
+  }
+
   if (stashLoading) return <div>Loading performer</div>;
 
   if (matchedPerformer && matchedStashID) {
@@ -59,7 +66,7 @@ const PerformerResult: React.FC<IPerformerResultProps> = ({
       <div className="row no-gutters my-2">
         <div className="entity-name">
           <FormattedMessage id="countables.performers" values={{ count: 1 }} />:
-          <b className="ml-2">{performer.name}</b>
+          <b className="ml-2">{renderPerformerName(performer.name?.toString(), performer.disambiguation?.toString())}</b>
         </div>
         <span className="ml-auto">
           <OptionalField
@@ -72,7 +79,7 @@ const PerformerResult: React.FC<IPerformerResultProps> = ({
               <span className="mr-2">
                 <FormattedMessage id="component_tagger.verb_matched" />:
               </span>
-              <b className="col-3 text-right">{matchedPerformer.name}</b>
+              <b className="col-3 text-right">{renderPerformerName(matchedPerformer.name, matchedPerformer.disambiguation)}</b>
             </div>
           </OptionalField>
         </span>
@@ -101,7 +108,7 @@ const PerformerResult: React.FC<IPerformerResultProps> = ({
     <div className="row no-gutters align-items-center mt-2">
       <div className="entity-name">
         <FormattedMessage id="countables.performers" values={{ count: 1 }} />:
-        <b className="ml-2">{performer.name}</b>
+        <b className="ml-2">{renderPerformerName(performer.name?.toString(), performer.disambiguation?.toString())}</b>
       </div>
       <ButtonGroup>
         <Button variant="secondary" onClick={() => onCreate()}>
