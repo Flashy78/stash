@@ -102,6 +102,7 @@ export const GalleryImagesPanel: React.FC<IGalleryDetailsProps> = ({
       filterHook={filterHook}
       persistState={PersistanceLevel.VIEW}
       persistanceKey="galleryimages"
+      chapters={gallery.chapters}
     />
   );
 };

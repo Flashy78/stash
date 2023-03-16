@@ -192,24 +192,24 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
     }
   }
 
+  function onSpriteClick(ev: React.MouseEvent<HTMLElement>) {
+    ev.preventDefault();
+    showLightboxImage(scene.paths.sprite ?? "");
+  }
+
   function maybeRenderSpriteIcon() {
-    if (scene.paths.sprite && scene.paths.sprite.length > 0) {
-      // Even if a scene doesn't have a sprite generated, the path will be
-      // http://localhost:9999/scene/_sprite.jpg so check for that case
-      const spriteParts = scene.paths.sprite.split("/");
-      const filename = spriteParts.pop();
-      if (filename?.includes("_sprite") && filename.split("_")[0].length > 0) {
-        // Assume there is a hash before _sprite.jpg in the url.
-        return (
-          <Button
-            className="p-0"
-            variant="link"
-            onClick={() => showLightboxImage(scene.paths.sprite ?? "")}
-          >
-            <Icon icon={faImage} />
-          </Button>
-        );
-      }
+    // If a scene doesn't have any files, or doesn't have a sprite generated, the
+    // path will be http://localhost:9999/scene/_sprite.jpg
+    if (scene.files.length > 0) {
+      return (
+        <Button
+          className="sprite-button"
+          variant="link"
+          onClick={onSpriteClick}
+        >
+          <Icon icon={faImage} />
+        </Button>
+      );
     }
   }
 
@@ -225,6 +225,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
                 isPortrait={isPortrait}
                 soundActive={false}
               />
+              {maybeRenderSpriteIcon()}
             </Link>
             <div className="d-flex justify-content-center">
               {maybeRenderSpriteIcon()}

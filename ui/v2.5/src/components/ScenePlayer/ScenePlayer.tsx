@@ -130,6 +130,12 @@ function handleHotkeys(player: VideoJsPlayer, event: videojs.KeyboardEvent) {
     case 57: // 9
       seekPercent(0.9);
       break;
+    case 96: // Numpad 0
+      seekStep(-60);
+      break;
+    case 110: // Numpad .
+      seekStep(60);
+      break;
     case 221: // ]
       seekPercentRelative(0.1);
       break;

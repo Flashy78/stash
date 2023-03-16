@@ -245,6 +245,12 @@ export const SceneFileInfoPanel: React.FC<ISceneFileInfoPanelProps> = (
   return (
     <>
       <dl className="container scene-file-info details-list">
+        <URLField
+          id="media_info.downloaded_from"
+          url={props.scene.url}
+          value={props.scene.url}
+          truncate
+        />
       </dl>
 
       {filesPanel}
