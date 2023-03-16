@@ -95,10 +95,10 @@ function handleHotkeys(player: VideoJsPlayer, event: videojs.KeyboardEvent) {
       else player.requestFullscreen();
       break;
     case 38: // up arrow
-      player.volume(player.volume() + 0.1);
+      seekStep(4);
       break;
     case 40: // down arrow
-      player.volume(player.volume() - 0.1);
+      seekStep(-4);
       break;
     case 48: // 0
       player.currentTime(0);
@@ -129,6 +129,12 @@ function handleHotkeys(player: VideoJsPlayer, event: videojs.KeyboardEvent) {
       break;
     case 57: // 9
       seekPercent(0.9);
+      break;
+    case 96: // Numpad 0
+      seekStep(-60);
+      break;
+    case 110: // Numpad .
+      seekStep(60);
       break;
     case 221: // ]
       seekPercentRelative(0.1);
