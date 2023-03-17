@@ -478,9 +478,8 @@ const ScenePage: React.FC<IProps> = ({
       {maybeRenderSceneGenerateDialog()}
       {maybeRenderDeleteDialog()}
       <div
-        className={`scene-tabs order-xl-first order-last ${
-          collapsed ? "collapsed" : ""
-        }`}
+        className={`scene-tabs order-xl-first order-last ${collapsed ? "collapsed" : ""
+          }`}
       >
         <div className="d-none d-xl-block">
           {scene.studio && (
@@ -570,13 +569,13 @@ const SceneLoader: React.FC = () => {
   }
 
   // set up hotkeys
-  useEffect(() => {
-    Mousetrap.bind(".", () => setHideScrubber((value) => !value));
+  // useEffect(() => {
+  //   Mousetrap.bind(".", () => setHideScrubber((value) => !value));
 
-    return () => {
-      Mousetrap.unbind(".");
-    };
-  }, []);
+  //   return () => {
+  //     Mousetrap.unbind(".");
+  //   };
+  // }, []);
 
   async function getQueueFilterScenes(filter: ListFilterModel) {
     const query = await queryFindScenes(filter);
