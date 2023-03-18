@@ -70,10 +70,10 @@ function handleHotkeys(player: VideoJsPlayer, event: videojs.KeyboardEvent) {
   }
   switch (event.which) {
     case 39: // right arrow
-      seekStep(seekFactor);
+      seekStep(4);
       break;
     case 37: // left arrow
-      seekStep(-seekFactor);
+      seekStep(-4);
       break;
   }
 
@@ -95,10 +95,10 @@ function handleHotkeys(player: VideoJsPlayer, event: videojs.KeyboardEvent) {
       else player.requestFullscreen();
       break;
     case 38: // up arrow
-      player.currentTime(Math.min(player.duration(), player.currentTime() + 20));
+      seekStep(20);
       break;
     case 40: // down arrow
-      player.currentTime(Math.max(0, player.currentTime() - 20));
+      seekStep(-20);
       break;
     case 48: // 0
       player.currentTime(0);
@@ -298,6 +298,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = ({
       inactivityTimeout: 2000,
       preload: "none",
       userActions: {
+        doubleClick: false,
         hotkeys: function (this: VideoJsPlayer, event) {
           handleHotkeys(this, event);
         },

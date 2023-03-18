@@ -543,13 +543,13 @@ const SceneLoader: React.FC = () => {
   }
 
   // set up hotkeys
-  useEffect(() => {
-    Mousetrap.bind(".", () => setHideScrubber((value) => !value));
+  // useEffect(() => {
+  //   Mousetrap.bind(".", () => setHideScrubber((value) => !value));
 
-    return () => {
-      Mousetrap.unbind(".");
-    };
-  }, []);
+  //   return () => {
+  //     Mousetrap.unbind(".");
+  //   };
+  // }, []);
 
   async function getQueueFilterScenes(filter: ListFilterModel) {
     const query = await queryFindScenes(filter);

@@ -19,7 +19,7 @@ import {
 import { ListFilterOptions, MediaSortByOptions } from "./filter-options";
 import { DisplayMode } from "./types";
 
-const defaultSortBy = "title";
+const defaultSortBy = "date";
 
 const sortByOptions = ["date", ...MediaSortByOptions]
   .map(ListFilterOptions.createSortBy);

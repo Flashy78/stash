@@ -506,12 +506,15 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             { id: "countables.performers" },
             { count: scene?.performers?.length }
           )}
-          : {scene?.performers?.map((p) => {
-            if (p.disambiguation) {
-              return p.name + " (" + p.disambiguation + ")";
-            }
-            return p.name
-          }).join(", ")}
+          :{" "}
+          {scene?.performers
+            ?.map((p) => {
+              if (p.disambiguation) {
+                return p.name + " (" + p.disambiguation + ")";
+              }
+              return p.name;
+            })
+            .join(", ")}
         </div>
       );
     }
