@@ -47,7 +47,7 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
   const Toast = useToast();
   const history = useHistory();
   const intl = useIntl();
-  const { tab = "details" } = useParams<IPerformerParams>();
+  const { tab = "scenes" } = useParams<IPerformerParams>();
 
   const [collapsed, setCollapsed] = useState(false);
 
@@ -80,15 +80,15 @@ const PerformerPage: React.FC<IProps> = ({ performer }) => {
   const [deletePerformer, { loading: isDestroying }] = usePerformerDestroy();
 
   const activeTabKey =
-    tab === "scenes" ||
+    tab === "details" ||
     tab === "galleries" ||
     tab === "images" ||
     tab === "movies"
       ? tab
-      : "details";
+      : "scenes";
   const setActiveTabKey = (newTab: string | null) => {
     if (tab !== newTab) {
-      const tabParam = newTab === "details" ? "" : `/${newTab}`;
+      const tabParam = newTab === "scenes" ? "" : `/${newTab}`;
       history.replace(`/performers/${performer.id}${tabParam}`);
     }
   };
