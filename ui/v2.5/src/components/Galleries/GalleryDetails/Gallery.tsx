@@ -229,26 +229,10 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
     }
 
     return (
-      <Tab.Container
-        activeKey={activeRightTabKey}
-        unmountOnExit
-        onSelect={(k) => k && setActiveRightTabKey(k)}
-      >
-        <Tab.Content>
-          <Tab.Pane eventKey="images">
-            <GalleryImagesPanel
-              active={activeRightTabKey == "images"}
-              gallery={gallery}
-            />
-          </Tab.Pane>
-          <Tab.Pane eventKey="add">
-            <GalleryAddPanel
-              active={activeRightTabKey == "add"}
-              gallery={gallery}
-            />
-          </Tab.Pane>
-        </Tab.Content>
-      </Tab.Container>
+      <GalleryImagesPanel
+        active={activeRightTabKey == "images"}
+        gallery={gallery}
+      />
     );
   }
 
