@@ -31,13 +31,6 @@ export const ChapterEntries: React.FC<IChapterEntries> = ({
               {chapter.image_index}
             </div>
           </Button>
-          <Button
-            variant="link"
-            className="ml-auto"
-            onClick={() => onEdit(chapter)}
-          >
-            <FormattedMessage id="actions.edit" />
-          </Button>
         </div>
       </div>
     );

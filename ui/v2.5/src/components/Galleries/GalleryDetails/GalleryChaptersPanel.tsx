@@ -19,17 +19,6 @@ export const GalleryChapterPanel: React.FC<IGalleryChapterPanelProps> = (
   const [editingChapter, setEditingChapter] =
     useState<GQL.GalleryChapterDataFragment>();
 
-  // set up hotkeys
-  useEffect(() => {
-    if (props.isVisible) {
-      Mousetrap.bind("n", () => onOpenEditor());
-
-      return () => {
-        Mousetrap.unbind("n");
-      };
-    }
-  });
-
   function onOpenEditor(chapter?: GQL.GalleryChapterDataFragment) {
     setIsEditorOpen(true);
     setEditingChapter(chapter ?? undefined);
@@ -55,9 +44,6 @@ export const GalleryChapterPanel: React.FC<IGalleryChapterPanelProps> = (
 
   return (
     <div>
-      <Button onClick={() => onOpenEditor()}>
-        <FormattedMessage id="actions.create_chapters" />
-      </Button>
       <div className="container">
         <ChapterEntries
           galleryChapters={props.gallery.chapters}
