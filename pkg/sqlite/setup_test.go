@@ -537,6 +537,10 @@ func runTests(m *testing.M) int {
 	f.Close()
 	databaseFile := f.Name()
 	db = sqlite.NewDatabase()
+	db.SetBlobStoreOptions(sqlite.BlobStoreOptions{
+		UseDatabase: true,
+		// don't use filesystem
+	})
 
 	if err := db.Open(databaseFile); err != nil {
 		panic(fmt.Sprintf("Could not initialize database: %s", err.Error()))
@@ -566,11 +570,11 @@ func populateDB() error {
 
 		// TODO - link folders to zip files
 
-		if err := createMovies(ctx, sqlite.MovieReaderWriter, moviesNameCase, moviesNameNoCase); err != nil {
+		if err := createMovies(ctx, db.Movie, moviesNameCase, moviesNameNoCase); err != nil {
 			return fmt.Errorf("error creating movies: %s", err.Error())
 		}
 
-		if err := createTags(ctx, sqlite.TagReaderWriter, tagsNameCase, tagsNameNoCase); err != nil {
+		if err := createTags(ctx, db.Tag, tagsNameCase, tagsNameNoCase); err != nil {
 			return fmt.Errorf("error creating tags: %s", err.Error())
 		}
 
@@ -594,7 +598,7 @@ func populateDB() error {
 			return fmt.Errorf("error creating images: %s", err.Error())
 		}
 
-		if err := addTagImage(ctx, sqlite.TagReaderWriter, tagIdxWithCoverImage); err != nil {
+		if err := addTagImage(ctx, db.Tag, tagIdxWithCoverImage); err != nil {
 			return fmt.Errorf("error adding tag image: %s", err.Error())
 		}
 
@@ -602,7 +606,7 @@ func populateDB() error {
 			return fmt.Errorf("error creating saved filters: %s", err.Error())
 		}
 
-		if err := linkMovieStudios(ctx, sqlite.MovieReaderWriter); err != nil {
+		if err := linkMovieStudios(ctx, db.Movie); err != nil {
 			return fmt.Errorf("error linking movie studios: %s", err.Error())
 		}
 
@@ -610,7 +614,7 @@ func populateDB() error {
 			return fmt.Errorf("error linking studios parent: %s", err.Error())
 		}
 
-		if err := linkTagsParent(ctx, sqlite.TagReaderWriter); err != nil {
+		if err := linkTagsParent(ctx, db.Tag); err != nil {
 			return fmt.Errorf("error linking tags parent: %s", err.Error())
 		}
 
