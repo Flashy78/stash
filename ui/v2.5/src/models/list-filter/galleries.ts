@@ -4,6 +4,7 @@ import {
   NullNumberCriterionOption,
   createDateCriterionOption,
   createMandatoryTimestampCriterionOption,
+  createPathCriterionOption,
 } from "./criteria/criterion";
 import { PerformerFavoriteCriterionOption } from "./criteria/favorite";
 import { GalleryIsMissingCriterionOption } from "./criteria/is-missing";

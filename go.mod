@@ -9,7 +9,7 @@ require (
 	github.com/chromedp/chromedp v0.7.3
 	github.com/corona10/goimagehash v1.0.3
 	github.com/disintegration/imaging v1.6.0
-	github.com/fvbommel/sortorder v1.0.2
+	github.com/fvbommel/sortorder v1.1.0
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v4 v4.0.0

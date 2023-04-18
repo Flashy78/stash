@@ -5,6 +5,7 @@ import {
   NullNumberCriterionOption,
   createDateCriterionOption,
   createMandatoryTimestampCriterionOption,
+  createPathCriterionOption,
 } from "./criteria/criterion";
 import { HasMarkersCriterionOption } from "./criteria/has-markers";
 import { SceneIsMissingCriterionOption } from "./criteria/is-missing";
@@ -39,6 +40,8 @@ const displayModeOptions = [
 ];
 
 const criterionOptions = [
+  createStringCriterionOption("title"),
+  createStringCriterionOption("scene_code"),
   createStringCriterionOption("details"),
   createMandatoryNumberCriterionOption("o_counter"),
   TagsCriterionOption,
