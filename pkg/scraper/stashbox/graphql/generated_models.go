@@ -1797,6 +1797,7 @@ const (
 	PerformerSortEnumName            PerformerSortEnum = "NAME"
 	PerformerSortEnumBirthdate       PerformerSortEnum = "BIRTHDATE"
 	PerformerSortEnumSceneCount      PerformerSortEnum = "SCENE_COUNT"
+	PerformerSortEnumOCounter        PerformerSortEnum = "O_COUNTER"
 	PerformerSortEnumCareerStartYear PerformerSortEnum = "CAREER_START_YEAR"
 	PerformerSortEnumDebut           PerformerSortEnum = "DEBUT"
 	PerformerSortEnumLastScene       PerformerSortEnum = "LAST_SCENE"
@@ -1808,6 +1809,7 @@ var AllPerformerSortEnum = []PerformerSortEnum{
 	PerformerSortEnumName,
 	PerformerSortEnumBirthdate,
 	PerformerSortEnumSceneCount,
+	PerformerSortEnumOCounter,
 	PerformerSortEnumCareerStartYear,
 	PerformerSortEnumDebut,
 	PerformerSortEnumLastScene,
