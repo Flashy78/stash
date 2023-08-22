@@ -14,6 +14,35 @@ import (
 	"github.com/stashapp/stash/pkg/utils"
 )
 
+func convertVideoFile(f *file.VideoFile) *VideoFile {
+	ret := &VideoFile{
+		ID:             strconv.Itoa(int(f.ID)),
+		Path:           f.Path,
+		Basename:       f.Basename,
+		ParentFolderID: strconv.Itoa(int(f.ParentFolderID)),
+		ModTime:        f.ModTime,
+		Format:         f.Format,
+		Size:           f.Size,
+		Duration:       handleFloat64Value(f.Duration),
+		VideoCodec:     f.VideoCodec,
+		AudioCodec:     f.AudioCodec,
+		Width:          f.Width,
+		Height:         f.Height,
+		FrameRate:      handleFloat64Value(f.FrameRate),
+		BitRate:        int(f.BitRate),
+		CreatedAt:      f.CreatedAt,
+		UpdatedAt:      f.UpdatedAt,
+		Fingerprints:   resolveFingerprints(f.Base()),
+	}
+
+	if f.ZipFileID != nil {
+		zipFileID := strconv.Itoa(int(*f.ZipFileID))
+		ret.ZipFileID = &zipFileID
+	}
+
+	return ret
+}
+
 func (r *sceneResolver) getPrimaryFile(ctx context.Context, obj *models.Scene) (*file.VideoFile, error) {
 	if obj.PrimaryFileID != nil {
 		f, err := loaders.From(ctx).FileByID.Load(*obj.PrimaryFileID)
@@ -112,30 +141,7 @@ func (r *sceneResolver) Files(ctx context.Context, obj *models.Scene) ([]*VideoF
 	ret := make([]*VideoFile, len(files))
 
 	for i, f := range files {
-		ret[i] = &VideoFile{
-			ID:             strconv.Itoa(int(f.ID)),
-			Path:           f.Path,
-			Basename:       f.Basename,
-			ParentFolderID: strconv.Itoa(int(f.ParentFolderID)),
-			ModTime:        f.ModTime,
-			Format:         f.Format,
-			Size:           f.Size,
-			Duration:       handleFloat64Value(f.Duration),
-			VideoCodec:     f.VideoCodec,
-			AudioCodec:     f.AudioCodec,
-			Width:          f.Width,
-			Height:         f.Height,
-			FrameRate:      handleFloat64Value(f.FrameRate),
-			BitRate:        int(f.BitRate),
-			CreatedAt:      f.CreatedAt,
-			UpdatedAt:      f.UpdatedAt,
-			Fingerprints:   resolveFingerprints(f.Base()),
-		}
-
-		if f.ZipFileID != nil {
-			zipFileID := strconv.Itoa(int(*f.ZipFileID))
-			ret[i].ZipFileID = &zipFileID
-		}
+		ret[i] = convertVideoFile(f)
 	}
 
 	return ret, nil
@@ -178,8 +184,8 @@ func formatFingerprint(fp interface{}) string {
 func (r *sceneResolver) Paths(ctx context.Context, obj *models.Scene) (*ScenePathsType, error) {
 	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
 	config := manager.GetInstance().Config
-	builder := urlbuilders.NewSceneURLBuilder(baseURL, obj.ID)
-	screenshotPath := builder.GetScreenshotURL(obj.UpdatedAt)
+	builder := urlbuilders.NewSceneURLBuilder(baseURL, obj)
+	screenshotPath := builder.GetScreenshotURL()
 	previewPath := builder.GetStreamPreviewURL()
 	streamPath := builder.GetStreamURL(config.GetAPIKey()).String()
 	webpPath := builder.GetStreamPreviewImageURL()
@@ -370,7 +376,7 @@ func (r *sceneResolver) SceneStreams(ctx context.Context, obj *models.Scene) ([]
 	config := manager.GetInstance().Config
 
 	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
-	builder := urlbuilders.NewSceneURLBuilder(baseURL, obj.ID)
+	builder := urlbuilders.NewSceneURLBuilder(baseURL, obj)
 	apiKey := config.GetAPIKey()
 
 	return manager.GetSceneStreamPaths(obj, builder.GetStreamURL(apiKey), config.GetMaxStreamingTranscodeSize())
@@ -398,4 +404,33 @@ func (r *sceneResolver) InteractiveSpeed(ctx context.Context, obj *models.Scene)
 	}
 
 	return primaryFile.InteractiveSpeed, nil
+}
+
+func (r *sceneResolver) URL(ctx context.Context, obj *models.Scene) (*string, error) {
+	if !obj.URLs.Loaded() {
+		if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+			return obj.LoadURLs(ctx, r.repository.Scene)
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	urls := obj.URLs.List()
+	if len(urls) == 0 {
+		return nil, nil
+	}
+
+	return &urls[0], nil
+}
+
+func (r *sceneResolver) Urls(ctx context.Context, obj *models.Scene) ([]string, error) {
+	if !obj.URLs.Loaded() {
+		if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+			return obj.LoadURLs(ctx, r.repository.Scene)
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return obj.URLs.List(), nil
 }

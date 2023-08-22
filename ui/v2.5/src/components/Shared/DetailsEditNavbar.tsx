@@ -133,7 +133,6 @@ export const DetailsEditNavbar: React.FC<IProps> = (props: IProps) => {
 
   return (
     <div className={cx("details-edit", props.classNames)}>
-      {renderEditButton()}
       <ImageInput
         isEditing={props.isEditing}
         text={
@@ -170,10 +169,7 @@ export const DetailsEditNavbar: React.FC<IProps> = (props: IProps) => {
           </Button>
         </div>
       ) : null}
-      {renderAutoTagButton()}
-      {props.customButtons}
       {renderSaveButton()}
-      {renderDeleteButton()}
       {renderDeleteAlert()}
     </div>
   );

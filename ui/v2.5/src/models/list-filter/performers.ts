@@ -10,6 +10,7 @@ import {
 } from "./criteria/criterion";
 import { FavoriteCriterionOption } from "./criteria/favorite";
 import { GenderCriterionOption } from "./criteria/gender";
+import { CircumcisedCriterionOption } from "./criteria/circumcised";
 import { PerformerIsMissingCriterionOption } from "./criteria/is-missing";
 import { StashIDCriterionOption } from "./criteria/stash-ids";
 import { StudiosCriterionOption } from "./criteria/studios";
@@ -22,6 +23,7 @@ const sortByOptions = [
   "name",
   "random",
   "rating",
+  "penis_length",
 ]
   .map(ListFilterOptions.createSortBy)
   .concat([
@@ -33,6 +35,10 @@ const sortByOptions = [
       messageID: "gallery_count",
       value: "galleries_count",
     },
+    {
+      messageID: "o_counter",
+      value: "o_counter",
+    },
   ]);
 
 const displayModeOptions = [
@@ -43,6 +49,7 @@ const numberCriteria: CriterionType[] = [
   "death_year",
   "age",
   "weight",
+  "penis_length",
 ];
 
 const stringCriteria: CriterionType[] = [
@@ -61,10 +68,12 @@ const stringCriteria: CriterionType[] = [
 
 const criterionOptions = [
   GenderCriterionOption,
+  CircumcisedCriterionOption,
   TagsCriterionOption,
   StudiosCriterionOption,
   createMandatoryNumberCriterionOption("scene_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
+  new NumberCriterionOption("height", "height_cm", "height_cm"),
   ...numberCriteria.map((c) => createNumberCriterionOption(c)),
   ...stringCriteria.map((c) => createStringCriterionOption(c)),
   createDateCriterionOption("birthdate"),

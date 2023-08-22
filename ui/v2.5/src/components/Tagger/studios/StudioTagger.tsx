@@ -14,6 +14,8 @@ import {
   mutateStashBoxBatchStudioTag,
   getClient,
   studioMutationImpactedQueries,
+  useStudioCreate,
+  evictQueries,
 } from "src/core/StashService";
 import { Manual } from "src/components/Help/Manual";
 import { ConfigurationContext } from "src/hooks/Config";
@@ -81,10 +83,10 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
     return queryAll
       ? allStudios?.findStudios.count
       : filteredStashIDs.filter((s) =>
-          // if refresh, then we filter out the studios without a stash id
-          // otherwise, we want untagged studios, filtering out those with a stash id
-          refresh ? s.length > 0 : s.length === 0
-        ).length;
+        // if refresh, then we filter out the studios without a stash id
+        // otherwise, we want untagged studios, filtering out those with a stash id
+        refresh ? s.length > 0 : s.length === 0
+      ).length;
   }, [queryAll, refresh, studios, allStudios, selectedEndpoint.endpoint]);
 
   return (
@@ -118,7 +120,7 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
           type="radio"
           name="studio-query"
           label={<FormattedMessage id="studio_tagger.current_page" />}
-          defaultChecked={!queryAll}
+          checked={!queryAll}
           onChange={() => setQueryAll(false)}
         />
         <Form.Check
@@ -128,7 +130,7 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
           label={intl.formatMessage({
             id: "studio_tagger.query_all_studios_in_the_database",
           })}
-          defaultChecked={queryAll}
+          checked={queryAll}
           onChange={() => setQueryAll(true)}
         />
       </Form.Group>
@@ -145,7 +147,7 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
           label={intl.formatMessage({
             id: "studio_tagger.untagged_studios",
           })}
-          defaultChecked={!refresh}
+          checked={!refresh}
           onChange={() => setRefresh(false)}
         />
         <Form.Text>
@@ -158,7 +160,7 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
           label={intl.formatMessage({
             id: "studio_tagger.refresh_tagged_studios",
           })}
-          defaultChecked={refresh}
+          checked={refresh}
           onChange={() => setRefresh(true)}
         />
         <Form.Text>
@@ -385,12 +387,55 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
     });
   };
 
+  const [createStudio] = useStudioCreate();
   const updateStudio = useUpdateStudio();
 
-  const handleStudioUpdate = async (input: GQL.StudioCreateInput) => {
+  function handleSaveError(studioID: string, name: string, message: string) {
+    setError({
+      ...error,
+      [studioID]: {
+        message: intl.formatMessage(
+          { id: "studio_tagger.failed_to_save_studio" },
+          { studio: modalStudio?.name }
+        ),
+        details:
+          message === "UNIQUE constraint failed: studios.name"
+            ? intl.formatMessage({
+              id: "studio_tagger.name_already_exists",
+            })
+            : message,
+      },
+    });
+  }
+
+  const handleStudioUpdate = async (
+    input: GQL.StudioCreateInput,
+    parentInput?: GQL.StudioCreateInput
+  ) => {
     setModalStudio(undefined);
     const studioID = modalStudio?.stored_id;
     if (studioID) {
+      if (parentInput) {
+        try {
+          // if parent id is set, then update the existing studio
+          if (input.parent_id) {
+            const parentUpdateData: GQL.StudioUpdateInput = {
+              ...parentInput,
+              id: input.parent_id,
+            };
+            await updateStudio(parentUpdateData);
+          } else {
+            const parentRes = await createStudio({
+              variables: { input: parentInput },
+            });
+            input.parent_id = parentRes.data?.studioCreate?.id;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (e: any) {
+          handleSaveError(studioID, parentInput.name, e.message ?? "");
+        }
+      }
+
       const updateData: GQL.StudioUpdateInput = {
         ...input,
         id: studioID,
@@ -398,22 +443,11 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
 
       const res = await updateStudio(updateData);
       if (!res.data?.studioUpdate)
-        setError({
-          ...error,
-          [studioID]: {
-            message: intl.formatMessage(
-              { id: "studio_tagger.failed_to_save_studio" },
-              { studio: modalStudio?.name }
-            ),
-            details:
-              res?.errors?.[0].message ===
-              "UNIQUE constraint failed: studios.checksum"
-                ? intl.formatMessage({
-                    id: "studio_tagger.name_already_exists",
-                  })
-                : res?.errors?.[0].message,
-          },
-        });
+        handleSaveError(
+          studioID,
+          modalStudio?.name ?? "",
+          res?.errors?.[0]?.message ?? ""
+        );
     }
   };
 
@@ -668,7 +702,7 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
 
       // Once the studio batch is complete, refresh all local studio data
       const ac = getClient();
-      ac.refetchQueries({ include: studioMutationImpactedQueries });
+      evictQueries(ac.cache, studioMutationImpactedQueries);
     }
   }, [jobsSubscribe, batchJobID]);
 

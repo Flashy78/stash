@@ -3,18 +3,18 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jmoiron/sqlx"
-	"github.com/stashapp/stash/pkg/hash/md5"
+	"gopkg.in/guregu/null.v4"
+	"gopkg.in/guregu/null.v4/zero"
+
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/sliceutil/intslice"
 	"github.com/stashapp/stash/pkg/studio"
-	"gopkg.in/guregu/null.v4"
-	"gopkg.in/guregu/null.v4/zero"
 )
 
 const (
@@ -28,46 +28,43 @@ const (
 )
 
 type studioRow struct {
-	ID        int                    `db:"id" goqu:"skipinsert"`
-	Checksum  string                 `db:"checksum"`
-	Name      zero.String            `db:"name"`
-	URL       zero.String            `db:"url"`
-	ParentID  null.Int               `db:"parent_id,omitempty"`
-	CreatedAt models.SQLiteTimestamp `db:"created_at"`
-	UpdatedAt models.SQLiteTimestamp `db:"updated_at"`
-	Details   zero.String            `db:"details"`
+	ID        int         `db:"id" goqu:"skipinsert"`
+	Name      zero.String `db:"name"`
+	URL       zero.String `db:"url"`
+	ParentID  null.Int    `db:"parent_id,omitempty"`
+	CreatedAt Timestamp   `db:"created_at"`
+	UpdatedAt Timestamp   `db:"updated_at"`
 	// expressed as 1-100
-	Rating        null.Int `db:"rating"`
-	IgnoreAutoTag bool     `db:"ignore_auto_tag"`
+	Rating        null.Int    `db:"rating"`
+	Details       zero.String `db:"details"`
+	IgnoreAutoTag bool        `db:"ignore_auto_tag"`
 
-	// not used for resolution
+	// not used in resolutions or updates
 	ImageBlob zero.String `db:"image_blob"`
 }
 
 func (r *studioRow) fromStudio(o models.Studio) {
 	r.ID = o.ID
-	r.Checksum = md5.FromString(o.Name)
 	r.Name = zero.StringFrom(o.Name)
 	r.URL = zero.StringFrom(o.URL)
 	r.ParentID = intFromPtr(o.ParentID)
-	r.UpdatedAt = models.SQLiteTimestamp{Timestamp: time.Now()}
-	r.Details = zero.StringFrom(o.Details)
+	r.CreatedAt = Timestamp{Timestamp: o.CreatedAt}
+	r.UpdatedAt = Timestamp{Timestamp: o.UpdatedAt}
 	r.Rating = intFromPtr(o.Rating)
+	r.Details = zero.StringFrom(o.Details)
 	r.IgnoreAutoTag = o.IgnoreAutoTag
 }
 
 func (r *studioRow) resolve() *models.Studio {
 	ret := &models.Studio{
-		ID:        r.ID,
-		Checksum:  r.Checksum,
-		Name:      r.Name.String,
-		URL:       r.URL.String,
-		ParentID:  nullIntPtr(r.ParentID),
-		CreatedAt: r.CreatedAt.Timestamp,
-		UpdatedAt: r.UpdatedAt.Timestamp,
-		Details:   r.Details.String,
-		// expressed as 1-100
+		ID:            r.ID,
+		Name:          r.Name.String,
+		URL:           r.URL.String,
+		ParentID:      nullIntPtr(r.ParentID),
+		CreatedAt:     r.CreatedAt.Timestamp,
+		UpdatedAt:     r.UpdatedAt.Timestamp,
 		Rating:        nullIntPtr(r.Rating),
+		Details:       r.Details.String,
 		IgnoreAutoTag: r.IgnoreAutoTag,
 	}
 
@@ -79,15 +76,13 @@ type studioRowRecord struct {
 }
 
 func (r *studioRowRecord) fromPartial(o models.StudioPartial) {
-	if !o.Name.Null && o.Name.Value != "" {
-		r.setString("checksum", models.NewOptionalString(md5.FromString(o.Name.Value)))
-	}
 	r.setNullString("name", o.Name)
 	r.setNullString("url", o.URL)
 	r.setNullInt("parent_id", o.ParentID)
-	r.setSQLiteTimestamp("updated_at", models.NewOptionalTime(time.Now()))
-	r.setNullString("details", o.Details)
+	r.setTimestamp("created_at", o.CreatedAt)
+	r.setTimestamp("updated_at", o.UpdatedAt)
 	r.setNullInt("rating", o.Rating)
+	r.setNullString("details", o.Details)
 	r.setBool("ignore_auto_tag", o.IgnoreAutoTag)
 }
 
@@ -112,128 +107,85 @@ func NewStudioStore(blobStore *BlobStore) *StudioStore {
 	}
 }
 
-func (qb *StudioStore) Create(ctx context.Context, input models.StudioDBInput) (*int, error) {
-	var err error
-	var parentID *int
-	parentID, err = qb.handleParentStudio(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	if parentID != nil {
-		input.StudioCreate.ParentID = parentID
-	}
+func (qb *StudioStore) table() exp.IdentifierExpression {
+	return qb.tableMgr.table
+}
 
-	// Create the main studio
+func (qb *StudioStore) selectDataset() *goqu.SelectDataset {
+	return dialect.From(qb.table()).Select(qb.table().All())
+}
+
+func (qb *StudioStore) Create(ctx context.Context, newObject *models.Studio) error {
+	var err error
+
 	var r studioRow
-	r.fromStudio(*input.StudioCreate)
-	time := time.Now()
-	r.CreatedAt = models.SQLiteTimestamp{Timestamp: time}
-	r.UpdatedAt = models.SQLiteTimestamp{Timestamp: time}
+	r.fromStudio(*newObject)
 
 	id, err := qb.tableMgr.insertID(ctx, r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Update image table
-	if len(input.StudioCreate.ImageBytes) > 0 {
-		if err := qb.UpdateImage(ctx, id, input.StudioCreate.ImageBytes); err != nil {
-			return nil, err
+	if newObject.Aliases.Loaded() {
+		if err := studio.EnsureAliasesUnique(ctx, id, newObject.Aliases.List(), qb); err != nil {
+			return err
+		}
+
+		if err := studiosAliasesTableMgr.insertJoins(ctx, id, newObject.Aliases.List()); err != nil {
+			return err
 		}
 	}
 
-	if input.StudioCreate.Aliases.Loaded() {
-		if err := studio.EnsureAliasesUnique(ctx, id, input.StudioCreate.Aliases.List(), qb); err != nil {
-			return nil, err
-		}
-
-		if err := studiosAliasesTableMgr.insertJoins(ctx, id, input.StudioCreate.Aliases.List()); err != nil {
-			return nil, err
+	if newObject.StashIDs.Loaded() {
+		if err := studiosStashIDsTableMgr.insertJoins(ctx, id, newObject.StashIDs.List()); err != nil {
+			return err
 		}
 	}
 
-	if input.StudioCreate.StashIDs.Loaded() {
-		if err := studiosStashIDsTableMgr.insertJoins(ctx, id, input.StudioCreate.StashIDs.List()); err != nil {
-			return nil, err
-		}
+	updated, _ := qb.find(ctx, id)
+	if err != nil {
+		return fmt.Errorf("finding after create: %w", err)
 	}
 
-	return &id, nil
+	*newObject = *updated
+	return nil
 }
 
-func (qb *StudioStore) UpdatePartial(ctx context.Context, input models.StudioDBInput) (*models.Studio, error) {
-	var err error
-	var parentID *int
-	parentID, err = qb.handleParentStudio(ctx, input)
-	if err != nil {
-		return nil, err
-	} else if parentID != nil {
-		input.StudioUpdate.ParentID = models.NewOptionalIntPtr(parentID)
-	}
-
+func (qb *StudioStore) UpdatePartial(ctx context.Context, input models.StudioPartial) (*models.Studio, error) {
 	r := studioRowRecord{
 		updateRecord{
 			Record: make(exp.Record),
 		},
 	}
 
-	r.fromPartial(*input.StudioUpdate)
+	r.fromPartial(input)
 
 	if len(r.Record) > 0 {
-		if err := qb.tableMgr.updateByID(ctx, input.StudioUpdate.ID, r.Record); err != nil {
+		if err := qb.tableMgr.updateByID(ctx, input.ID, r.Record); err != nil {
 			return nil, err
 		}
 	}
 
-	// Update image table
-	if input.StudioUpdate.ImageIncluded {
-		if err := qb.UpdateImage(ctx, input.StudioUpdate.ID, input.StudioUpdate.ImageBytes); err != nil {
+	if input.Aliases != nil {
+		if err := studio.EnsureAliasesUnique(ctx, input.ID, input.Aliases.Values, qb); err != nil {
+			return nil, err
+		}
+
+		if err := studiosAliasesTableMgr.modifyJoins(ctx, input.ID, input.Aliases.Values, input.Aliases.Mode); err != nil {
 			return nil, err
 		}
 	}
 
-	if input.StudioUpdate.Aliases != nil {
-		if err := studio.EnsureAliasesUnique(ctx, input.StudioUpdate.ID, input.StudioUpdate.Aliases.Values, qb); err != nil {
-			return nil, err
-		}
-
-		if err := studiosAliasesTableMgr.modifyJoins(ctx, input.StudioUpdate.ID, input.StudioUpdate.Aliases.Values, input.StudioUpdate.Aliases.Mode); err != nil {
+	if input.StashIDs != nil {
+		if err := studiosStashIDsTableMgr.modifyJoins(ctx, input.ID, input.StashIDs.StashIDs, input.StashIDs.Mode); err != nil {
 			return nil, err
 		}
 	}
 
-	if input.StudioUpdate.StashIDs != nil {
-		if err := studiosStashIDsTableMgr.modifyJoins(ctx, input.StudioUpdate.ID, input.StudioUpdate.StashIDs.StashIDs, input.StudioUpdate.StashIDs.Mode); err != nil {
-			return nil, err
-		}
-	}
-
-	return qb.Find(ctx, input.StudioUpdate.ID)
+	return qb.Find(ctx, input.ID)
 }
 
-// Returns a studio ID if a new one was created
-func (qb *StudioStore) handleParentStudio(ctx context.Context, input models.StudioDBInput) (*int, error) {
-	var err error
-	var id *int
-	var parentDBInput models.StudioDBInput
-
-	if input.ParentCreate != nil {
-		parentDBInput.StudioCreate = input.ParentCreate
-		id, err = qb.Create(ctx, parentDBInput)
-		if err != nil {
-			return nil, err
-		}
-	} else if input.ParentUpdate != nil {
-		parentDBInput.StudioUpdate = input.ParentUpdate
-		_, err := qb.UpdatePartial(ctx, parentDBInput)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return id, nil
-}
-
-// This is only used by the Import/Export functionality, which already handles parent/child studios
+// This is only used by the Import/Export functionality
 func (qb *StudioStore) Update(ctx context.Context, updatedObject *models.Studio) error {
 	var r studioRow
 	r.fromStudio(*updatedObject)
@@ -259,45 +211,28 @@ func (qb *StudioStore) Update(ctx context.Context, updatedObject *models.Studio)
 
 func (qb *StudioStore) Destroy(ctx context.Context, id int) error {
 	// must handle image checksums manually
-	if err := qb.DestroyImage(ctx, id); err != nil {
-		return err
-	}
-
-	// TODO - set null on foreign key in scraped items
-	// remove studio from scraped items
-	_, err := qb.tx.Exec(ctx, "UPDATE scraped_items SET studio_id = null WHERE studio_id = ?", id)
-	if err != nil {
+	if err := qb.destroyImage(ctx, id); err != nil {
 		return err
 	}
 
 	return qb.destroyExisting(ctx, []int{id})
 }
 
-func (qb *StudioStore) table() exp.IdentifierExpression {
-	return qb.tableMgr.table
-}
-
-func (qb *StudioStore) selectDataset() *goqu.SelectDataset {
-	return dialect.From(qb.table()).Select(qb.table().All())
-}
-
+// returns nil, nil if not found
 func (qb *StudioStore) Find(ctx context.Context, id int) (*models.Studio, error) {
-	q := qb.selectDataset().Where(qb.tableMgr.byID(id))
-
-	ret, err := qb.get(ctx, q)
-	if err != nil {
-		return nil, fmt.Errorf("getting studio by id %d: %w", id, err)
+	ret, err := qb.find(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
 	}
-
-	return ret, nil
+	return ret, err
 }
 
 func (qb *StudioStore) FindMany(ctx context.Context, ids []int) ([]*models.Studio, error) {
-	tableMgr := studioTableMgr
 	ret := make([]*models.Studio, len(ids))
 
+	table := qb.table()
 	if err := batchExec(ids, defaultBatchSize, func(batch []int) error {
-		q := goqu.Select("*").From(tableMgr.table).Where(tableMgr.byIDInts(batch...))
+		q := qb.selectDataset().Prepared(true).Where(table.Col(idColumn).In(batch))
 		unsorted, err := qb.getMany(ctx, q)
 		if err != nil {
 			return err
@@ -322,6 +257,19 @@ func (qb *StudioStore) FindMany(ctx context.Context, ids []int) ([]*models.Studi
 	return ret, nil
 }
 
+// returns nil, sql.ErrNoRows if not found
+func (qb *StudioStore) find(ctx context.Context, id int) (*models.Studio, error) {
+	q := qb.selectDataset().Where(qb.tableMgr.byID(id))
+
+	ret, err := qb.get(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+// returns nil, sql.ErrNoRows if not found
 func (qb *StudioStore) get(ctx context.Context, q *goqu.SelectDataset) (*models.Studio, error) {
 	ret, err := qb.getMany(ctx, q)
 	if err != nil {
@@ -368,62 +316,54 @@ func (qb *StudioStore) findBySubquery(ctx context.Context, sq *goqu.SelectDatase
 }
 
 func (qb *StudioStore) FindChildren(ctx context.Context, id int) ([]*models.Studio, error) {
+	// SELECT studios.* FROM studios WHERE studios.parent_id = ?
 	table := qb.table()
-
-	sq := dialect.From(table).
-		Select(table.Col(idColumn)).Where(
-		table.Col(studioParentIDColumn).Eq(id),
-	)
-	ret, err := qb.findBySubquery(ctx, sq)
+	sq := qb.selectDataset().Where(table.Col(studioParentIDColumn).Eq(id))
+	ret, err := qb.getMany(ctx, sq)
 
 	if err != nil {
-		return nil, fmt.Errorf("getting child studios for studio %d: %w", id, err)
+		return nil, err
 	}
 
 	return ret, nil
 }
 
 func (qb *StudioStore) FindBySceneID(ctx context.Context, sceneID int) (*models.Studio, error) {
+	// SELECT studios.* FROM studios JOIN scenes ON studios.id = scenes.studio_id WHERE scenes.id = ? LIMIT 1
 	table := qb.table()
-	sceneTable := sceneTableMgr.table
-
-	sq := dialect.From(table).
-		InnerJoin(sceneTable,
-			goqu.On(table.Col(idColumn).Eq(sceneTable.Col(studioIDColumn))),
-		).
-		Select(table.Col(idColumn)).Where(
-		sceneTable.Col(idColumn).Eq(sceneID),
+	scenes := sceneTableMgr.table
+	sq := qb.selectDataset().Join(
+		scenes, goqu.On(table.Col(idColumn), scenes.Col(studioIDColumn)),
+	).Where(
+		scenes.Col(idColumn),
 	).Limit(1)
-	ret, err := qb.findBySubquery(ctx, sq)
+	ret, err := qb.get(ctx, sq)
 
-	if err != nil {
-		return nil, fmt.Errorf("getting studio for scene %d: %w", sceneID, err)
-	} else if len(ret) < 1 {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 
-	return ret[0], nil
+	return ret, nil
 }
 
 func (qb *StudioStore) FindByName(ctx context.Context, name string, nocase bool) (*models.Studio, error) {
-	clause := "name "
+	// query := "SELECT * FROM studios WHERE name = ?"
+	// if nocase {
+	// 	query += " COLLATE NOCASE"
+	// }
+	// query += " LIMIT 1"
+	where := "name = ?"
 	if nocase {
-		clause += "COLLATE NOCASE "
+		where += " COLLATE NOCASE"
 	}
-	clause += "= ?"
+	sq := qb.selectDataset().Prepared(true).Where(goqu.L(where, name)).Limit(1)
+	ret, err := qb.get(ctx, sq)
 
-	sq := qb.selectDataset().Prepared(true).Where(
-		goqu.L(clause, name),
-	).Limit(1)
-	ret, err := qb.getMany(ctx, sq)
-
-	if err != nil {
-		return nil, fmt.Errorf("getting studio by name: %s: %w", name, err)
-	} else if len(ret) < 1 {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 
-	return ret[0], nil
+	return ret, nil
 }
 
 func (qb *StudioStore) FindByStashID(ctx context.Context, stashID models.StashID) ([]*models.Studio, error) {
@@ -481,19 +421,16 @@ func (qb *StudioStore) QueryForAutoTag(ctx context.Context, words []string) ([]*
 	// TODO - Query needs to be changed to support queries of this type, and
 	// this method should be removed
 	table := qb.table()
-	sq := dialect.From(table).Select(table.Col(idColumn))
-	// TODO - disabled alias matching until we get finer control over it
-	// .LeftJoin(
-	// 	studiosAliasesJoinTable,
-	// 	goqu.On(studiosAliasesJoinTable.Col(studioIDColumn).Eq(table.Col(idColumn))),
-	// )
+	sq := dialect.From(table).Select(table.Col(idColumn)).LeftJoin(
+		studiosAliasesJoinTable,
+		goqu.On(studiosAliasesJoinTable.Col(studioIDColumn).Eq(table.Col(idColumn))),
+	)
 
 	var whereClauses []exp.Expression
 
 	for _, w := range words {
 		whereClauses = append(whereClauses, table.Col(studioNameColumn).Like(w+"%"))
-		// TODO - see above
-		// whereClauses = append(whereClauses, studiosAliasesJoinTable.Col("alias").Like(w+"%"))
+		whereClauses = append(whereClauses, studiosAliasesJoinTable.Col("alias").Like(w+"%"))
 	}
 
 	sq = sq.Where(
@@ -753,7 +690,7 @@ func (qb *StudioStore) UpdateImage(ctx context.Context, studioID int, image []by
 	return qb.blobJoinQueryBuilder.UpdateImage(ctx, studioID, studioImageBlobColumn, image)
 }
 
-func (qb *StudioStore) DestroyImage(ctx context.Context, studioID int) error {
+func (qb *StudioStore) destroyImage(ctx context.Context, studioID int) error {
 	return qb.blobJoinQueryBuilder.DestroyImage(ctx, studioID, studioImageBlobColumn)
 }
 

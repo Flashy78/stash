@@ -12,6 +12,7 @@ import {
   generateDefaultFrontPageContent,
   IUIConfig,
 } from "src/core/config";
+import { useScrollToTopOnMount } from "src/hooks/scrollToTop";
 
 const FrontPage: React.FC = () => {
   const intl = useIntl();
@@ -23,6 +24,8 @@ const FrontPage: React.FC = () => {
   const [saveUI] = useConfigureUI();
 
   const { configuration, loading } = React.useContext(ConfigurationContext);
+
+  useScrollToTopOnMount();
 
   async function onUpdateConfig(content?: FrontPageContent[]) {
     setIsEditing(false);
@@ -72,9 +75,6 @@ const FrontPage: React.FC = () => {
         ))}
       </div>
       <div className="recommendations-footer">
-        <Button onClick={() => setIsEditing(true)}>
-          <FormattedMessage id={"actions.customise"} />
-        </Button>
       </div>
     </div>
   );

@@ -1,7 +1,14 @@
 import { Tab, Nav, Dropdown, Button, ButtonGroup } from "react-bootstrap";
-import React, { useEffect, useState, useMemo, useContext, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useContext,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import { useParams, useLocation, useHistory, Link } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
@@ -28,7 +35,11 @@ import { OCounterButton } from "./OCounterButton";
 import { OrganizedButton } from "./OrganizedButton";
 import { ConfigurationContext } from "src/hooks/Config";
 import { getPlayerPosition } from "src/components/ScenePlayer/util";
-import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEllipsisV,
+  faChevronRight,
+  faChevronLeft,
+} from "@fortawesome/free-solid-svg-icons";
 import { lazyComponent } from "src/utils/lazyComponent";
 
 const SubmitStashBoxDraft = lazyComponent(
@@ -80,6 +91,10 @@ interface IProps {
   collapsed: boolean;
   setCollapsed: (state: boolean) => void;
   setContinuePlaylist: (value: boolean) => void;
+}
+
+interface ISceneParams {
+  id: string;
 }
 
 const ScenePage: React.FC<IProps> = ({
@@ -156,6 +171,23 @@ const ScenePage: React.FC<IProps> = ({
       Mousetrap.unbind(",");
     };
   });
+
+  async function onSave(input: GQL.SceneCreateInput) {
+    await updateScene({
+      variables: {
+        input: {
+          id: scene.id,
+          ...input,
+        },
+      },
+    });
+    Toast.success({
+      content: intl.formatMessage(
+        { id: "toast.updated_entity" },
+        { entity: intl.formatMessage({ id: "scene" }).toLocaleLowerCase() }
+      ),
+    });
+  }
 
   const onOrganizedClick = async () => {
     try {
@@ -360,9 +392,7 @@ const ScenePage: React.FC<IProps> = ({
           <Nav.Item>
             <Nav.Link eventKey="scene-file-info-panel">
               <FormattedMessage id="file_info" />
-              {scene.files.length > 1 && (
-                <Counter count={scene.files.length ?? 0} />
-              )}
+              <Counter count={scene.files.length} hideZero hideOne />
             </Nav.Link>
           </Nav.Item>
           <ButtonGroup className="ml-auto">
@@ -411,14 +441,12 @@ const ScenePage: React.FC<IProps> = ({
         <Tab.Pane eventKey="scene-movie-panel">
           <SceneMoviePanel scene={scene} />
         </Tab.Pane>
-        {scene.galleries.length === 1 && (
-          <Tab.Pane eventKey="scene-galleries-panel">
-            <GalleryViewer galleryId={scene.galleries[0].id} />
-          </Tab.Pane>
-        )}
-        {scene.galleries.length > 1 && (
+        {scene.galleries.length >= 1 && (
           <Tab.Pane eventKey="scene-galleries-panel">
             <SceneGalleriesPanel galleries={scene.galleries} />
+            {scene.galleries.length === 1 && (
+              <GalleryViewer galleryId={scene.galleries[0].id} />
+            )}
           </Tab.Pane>
         )}
         <Tab.Pane eventKey="scene-video-filter-panel">
@@ -431,6 +459,7 @@ const ScenePage: React.FC<IProps> = ({
           <SceneEditPanel
             isVisible={activeTabKey === "scene-edit-panel"}
             scene={scene}
+            onSubmit={onSave}
             onDelete={() => setIsDeleteAlertOpen(true)}
           />
         </Tab.Pane>
@@ -438,8 +467,8 @@ const ScenePage: React.FC<IProps> = ({
     </Tab.Container>
   );
 
-  function getCollapseButtonText() {
-    return collapsed ? ">" : "<";
+  function getCollapseButtonIcon() {
+    return collapsed ? faChevronRight : faChevronLeft;
   }
 
   const title = objectTitle(scene);
@@ -473,7 +502,7 @@ const ScenePage: React.FC<IProps> = ({
       </div>
       <div className="scene-divider d-none d-xl-block">
         <Button onClick={() => setCollapsed(!collapsed)}>
-          {getCollapseButtonText()}
+          <Icon className="fa-fw" icon={getCollapseButtonIcon()} />
         </Button>
       </div>
       <SubmitStashBoxDraft
@@ -487,12 +516,24 @@ const ScenePage: React.FC<IProps> = ({
   );
 };
 
-const SceneLoader: React.FC = () => {
-  const { id } = useParams<{ id?: string }>();
-  const location = useLocation();
-  const history = useHistory();
+const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
+  location,
+  history,
+  match,
+}) => {
+  const { id } = match.params;
   const { configuration } = useContext(ConfigurationContext);
-  const { data, loading, error } = useFindScene(id ?? "");
+  const { data, loading, error } = useFindScene(id);
+
+  const [scene, setScene] = useState<GQL.SceneDataFragment>();
+
+  // useLayoutEffect to update before paint
+  useLayoutEffect(() => {
+    // only update scene when loading is done
+    if (!loading) {
+      setScene(data?.findScene ?? undefined);
+    }
+  }, [data, loading]);
 
   const queryParams = useMemo(
     () => new URLSearchParams(location.search),
@@ -608,7 +649,7 @@ const SceneLoader: React.FC = () => {
     const { scenes } = query.data.findScenes;
 
     // append scenes to scene list
-    const newScenes = (scenes as QueuedScene[]).concat(queueScenes);
+    const newScenes = queueScenes.concat(scenes as QueuedScene[]);
     setQueueScenes(newScenes);
     // don't change queue start
   }
@@ -705,11 +746,11 @@ const SceneLoader: React.FC = () => {
     }
   }
 
-  if (loading) return <LoadingIndicator />;
-  if (error) return <ErrorMessage error={error.message} />;
-
-  const scene = data?.findScene;
-  if (!scene) return <ErrorMessage error={`No scene found with id ${id}.`} />;
+  if (!scene) {
+    if (loading) return <LoadingIndicator />;
+    if (error) return <ErrorMessage error={error.message} />;
+    return <ErrorMessage error={`No scene found with id ${id}.`} />;
+  }
 
   return (
     <div className="row">
@@ -734,7 +775,6 @@ const SceneLoader: React.FC = () => {
       <div className={`scene-player-container ${collapsed ? "expanded" : ""}`}>
         <ScenePlayer
           key="ScenePlayer"
-          className="w-100 m-sm-auto no-gutter"
           scene={scene}
           hideScrubberOverride={hideScrubber}
           autoplay={autoplay}

@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/fvbommel/sortorder/casefolded"
+	"github.com/WithoutPants/sortorder/casefolded"
 	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
@@ -29,6 +29,7 @@ func (d *CustomSQLiteDriver) Open(dsn string) (driver.Conn, error) {
 				"regexp":            regexFn,
 				"durationToTinyInt": durationToTinyIntFn,
 				"basename":          basenameFn,
+				"phash_distance":    phashDistanceFn,
 			}
 
 			for name, fn := range funcs {

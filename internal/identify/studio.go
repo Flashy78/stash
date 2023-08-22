@@ -4,126 +4,93 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
-	"github.com/stashapp/stash/pkg/utils"
+	"github.com/stashapp/stash/pkg/studio"
 )
 
-type StudioCreator interface {
-	Create(ctx context.Context, input models.StudioDBInput) (*int, error)
-}
-
-func createMissingStudio(ctx context.Context, endpoint string, w StudioCreator, studio *models.ScrapedStudio) (*int, error) {
-	var dbInput models.StudioDBInput
+func createMissingStudio(ctx context.Context, endpoint string, w models.StudioReaderWriter, s *models.ScrapedStudio) (*int, error) {
 	var err error
 
-	if studio.Parent != nil {
-		if studio.Parent.StoredID == nil {
+	if s.Parent != nil {
+		if s.Parent.StoredID == nil {
 			// The parent needs to be created
-			dbInput.ParentCreate, err = studioFromScrapedStudio(ctx, studio.Parent, endpoint)
+			newParentStudio := s.Parent.ToStudio(endpoint, nil)
+			parentImage, err := s.Parent.GetImage(ctx, nil)
+			if err != nil {
+				logger.Errorf("Failed to make parent studio from scraped studio %s: %s", s.Parent.Name, err.Error())
+				return nil, err
+			}
+
+			// Create the studio
+			err = w.Create(ctx, newParentStudio)
 			if err != nil {
 				return nil, err
 			}
+
+			// Update image table
+			if len(parentImage) > 0 {
+				if err := w.UpdateImage(ctx, newParentStudio.ID, parentImage); err != nil {
+					return nil, err
+				}
+			}
+
+			storedId := strconv.Itoa(newParentStudio.ID)
+			s.Parent.StoredID = &storedId
 		} else {
 			// The parent studio matched an existing one and the user has chosen in the UI to link and/or update it
-			dbInput.ParentUpdate, err = studioPartialFromScrapedStudio(ctx, studio.Parent, studio.Parent.StoredID, endpoint)
+			existingStashIDs := getStashIDsForStudio(ctx, *s.Parent.StoredID, w)
+			studioPartial := s.Parent.ToPartial(s.Parent.StoredID, endpoint, nil, existingStashIDs)
+			parentImage, err := s.Parent.GetImage(ctx, nil)
 			if err != nil {
 				return nil, err
 			}
-		}
-	}
 
-	dbInput.StudioCreate, err = studioFromScrapedStudio(ctx, studio, endpoint)
-	if err != nil {
-		return nil, err
-	}
+			if err := studio.ValidateModify(ctx, *studioPartial, w); err != nil {
+				return nil, err
+			}
 
-	studioID, err := w.Create(ctx, dbInput)
-	if err != nil {
-		return nil, err
-	}
+			_, err = w.UpdatePartial(ctx, *studioPartial)
+			if err != nil {
+				return nil, err
+			}
 
-	return studioID, nil
-}
-
-// Duplicated in task_stash_box_tag.go
-func studioFromScrapedStudio(ctx context.Context, input *models.ScrapedStudio, endpoint string) (*models.Studio, error) {
-	// Populate a new studio from the input
-	newStudio := models.Studio{
-		Name: input.Name,
-		StashIDs: models.NewRelatedStashIDs([]models.StashID{
-			{
-				Endpoint: endpoint,
-				StashID:  *input.RemoteSiteID,
-			},
-		}),
-	}
-
-	if input.URL != nil {
-		newStudio.URL = *input.URL
-	}
-
-	if input.Parent != nil && input.Parent.StoredID != nil {
-		parentId, _ := strconv.Atoi(*input.Parent.StoredID)
-		newStudio.ParentID = &parentId
-	}
-
-	// Process the base 64 encoded image string
-	if input.Image != nil {
-		var err error
-		newStudio.ImageBytes, err = utils.ProcessImageInput(ctx, *input.Image)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &newStudio, nil
-}
-
-// Duplicated in task_stash_box_tag.go
-func studioPartialFromScrapedStudio(ctx context.Context, input *models.ScrapedStudio, id *string, endpoint string) (*models.StudioPartial, error) {
-	partial := models.NewStudioPartial()
-	partial.ID, _ = strconv.Atoi(*id)
-
-	if input.Name != "" {
-		partial.Name = models.NewOptionalString(input.Name)
-
-	}
-
-	if input.URL != nil {
-		partial.URL = models.NewOptionalString(*input.URL)
-	}
-
-	if input.Parent != nil {
-		if input.Parent.StoredID != nil {
-			parentID, _ := strconv.Atoi(*input.Parent.StoredID)
-			if parentID > 0 {
-				// This is to be set directly as we know it has a value and the translator won't have the field
-				partial.ParentID = models.NewOptionalInt(parentID)
+			if len(parentImage) > 0 {
+				if err := w.UpdateImage(ctx, studioPartial.ID, parentImage); err != nil {
+					return nil, err
+				}
 			}
 		}
-	} else {
-		partial.ParentID = models.NewOptionalIntPtr(nil)
 	}
 
-	// Process the base 64 encoded image string
-	if len(input.Images) > 0 {
-		partial.ImageIncluded = true
-		var err error
-		partial.ImageBytes, err = utils.ProcessImageInput(ctx, input.Images[0])
-		if err != nil {
+	newStudio := s.ToStudio(endpoint, nil)
+	studioImage, err := s.GetImage(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Create(ctx, newStudio)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update image table
+	if len(studioImage) > 0 {
+		if err := w.UpdateImage(ctx, newStudio.ID, studioImage); err != nil {
 			return nil, err
 		}
 	}
 
-	partial.StashIDs = &models.UpdateStashIDs{
-		StashIDs: []models.StashID{
-			{
-				Endpoint: endpoint,
-				StashID:  *input.RemoteSiteID,
-			},
-		},
-		Mode: models.RelationshipUpdateModeSet,
-	}
+	return &newStudio.ID, nil
+}
 
-	return &partial, nil
+func getStashIDsForStudio(ctx context.Context, studioID string, w models.StudioReaderWriter) []models.StashID {
+	id, _ := strconv.Atoi(studioID)
+	tempStudio := &models.Studio{ID: id}
+
+	err := tempStudio.LoadStashIDs(ctx, w)
+	if err != nil {
+		return nil
+	}
+	return tempStudio.StashIDs.List()
 }

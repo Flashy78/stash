@@ -15,6 +15,20 @@ import (
 	"github.com/stashapp/stash/pkg/models"
 )
 
+func useAsVideo(pathname string) bool {
+	if instance.Config.IsCreateImageClipsFromVideos() && config.StashConfigs.GetStashFromDirPath(instance.Config.GetStashPaths(), pathname).ExcludeVideo {
+		return false
+	}
+	return isVideo(pathname)
+}
+
+func useAsImage(pathname string) bool {
+	if instance.Config.IsCreateImageClipsFromVideos() && config.StashConfigs.GetStashFromDirPath(instance.Config.GetStashPaths(), pathname).ExcludeVideo {
+		return isImage(pathname) || isVideo(pathname)
+	}
+	return isImage(pathname)
+}
+
 func isZip(pathname string) bool {
 	gExt := config.GetInstance().GetGalleryExtensions()
 	return fsutil.MatchExtension(pathname, gExt)
@@ -177,20 +191,23 @@ func (s *Manager) generateScreenshot(ctx context.Context, sceneId string, at *fl
 	j := job.MakeJobExec(func(ctx context.Context, progress *job.Progress) {
 		sceneIdInt, err := strconv.Atoi(sceneId)
 		if err != nil {
-			logger.Errorf("Error parsing scene id %s: %s", sceneId, err.Error())
+			logger.Errorf("Error parsing scene id %s: %v", sceneId, err)
 			return
 		}
 
 		var scene *models.Scene
 		if err := s.Repository.WithTxn(ctx, func(ctx context.Context) error {
-			var err error
 			scene, err = s.Repository.Scene.Find(ctx, sceneIdInt)
-			if scene != nil {
-				err = scene.LoadPrimaryFile(ctx, s.Repository.File)
+			if err != nil {
+				return err
 			}
-			return err
-		}); err != nil || scene == nil {
-			logger.Errorf("failed to get scene for generate: %s", err.Error())
+			if scene == nil {
+				return fmt.Errorf("scene with id %s not found", sceneId)
+			}
+
+			return scene.LoadPrimaryFile(ctx, s.Repository.File)
+		}); err != nil {
+			logger.Errorf("error finding scene for screenshot generation: %v", err)
 			return
 		}
 
@@ -246,6 +263,14 @@ func (s *Manager) Clean(ctx context.Context, input CleanMetadataInput) int {
 	}
 
 	return s.JobManager.Add(ctx, "Cleaning...", &j)
+}
+
+func (s *Manager) OptimiseDatabase(ctx context.Context) int {
+	j := OptimiseDatabaseJob{
+		Optimiser: s.Database,
+	}
+
+	return s.JobManager.Add(ctx, "Optimising database...", &j)
 }
 
 func (s *Manager) MigrateHash(ctx context.Context) int {
@@ -361,11 +386,11 @@ func (s *Manager) StashBoxBatchPerformerTag(ctx context.Context, input StashBoxB
 							if (input.Refresh && len(performer.StashIDs.List()) > 0) ||
 								(!input.Refresh && len(performer.StashIDs.List()) == 0) {
 								tasks = append(tasks, StashBoxBatchTagTask{
-									performer:       performer,
-									refresh:         input.Refresh,
-									box:             box,
-									excluded_fields: input.ExcludeFields,
-									task_type:       Performer,
+									performer:      performer,
+									refresh:        input.Refresh,
+									box:            box,
+									excludedFields: input.ExcludeFields,
+									taskType:       Performer,
 								})
 							}
 						} else {
@@ -385,17 +410,14 @@ func (s *Manager) StashBoxBatchPerformerTag(ctx context.Context, input StashBoxB
 			}
 
 			for i := range namesToUse {
-				if len(namesToUse[i]) > 0 {
-					performer := models.Performer{
-						Name: namesToUse[i],
-					}
-
+				name := namesToUse[i]
+				if len(name) > 0 {
 					tasks = append(tasks, StashBoxBatchTagTask{
-						performer:       &performer,
-						refresh:         false,
-						box:             box,
-						excluded_fields: input.ExcludeFields,
-						task_type:       Performer,
+						name:           &name,
+						refresh:        false,
+						box:            box,
+						excludedFields: input.ExcludeFields,
+						taskType:       Performer,
 					})
 				}
 			}
@@ -410,6 +432,7 @@ func (s *Manager) StashBoxBatchPerformerTag(ctx context.Context, input StashBoxB
 				performerQuery := s.Repository.Performer
 				var performers []*models.Performer
 				var err error
+
 				if input.Refresh {
 					performers, err = performerQuery.FindByStashIDStatus(ctx, true, box.Endpoint)
 				} else {
@@ -426,11 +449,11 @@ func (s *Manager) StashBoxBatchPerformerTag(ctx context.Context, input StashBoxB
 					}
 
 					tasks = append(tasks, StashBoxBatchTagTask{
-						performer:       performer,
-						refresh:         input.Refresh,
-						box:             box,
-						excluded_fields: input.ExcludeFields,
-						task_type:       Performer,
+						performer:      performer,
+						refresh:        input.Refresh,
+						box:            box,
+						excludedFields: input.ExcludeFields,
+						taskType:       Performer,
 					})
 				}
 				return nil
@@ -448,12 +471,9 @@ func (s *Manager) StashBoxBatchPerformerTag(ctx context.Context, input StashBoxB
 
 		logger.Infof("Starting stash-box batch operation for %d performers", len(tasks))
 
-		var wg sync.WaitGroup
 		for _, task := range tasks {
-			wg.Add(1)
 			progress.ExecuteTask(task.Description(), func() {
 				task.Start(ctx)
-				wg.Done()
 			})
 
 			progress.Increment()
@@ -499,12 +519,12 @@ func (s *Manager) StashBoxBatchStudioTag(ctx context.Context, input StashBoxBatc
 							if (input.Refresh && len(studio.StashIDs.List()) > 0) ||
 								(!input.Refresh && len(studio.StashIDs.List()) == 0) {
 								tasks = append(tasks, StashBoxBatchTagTask{
-									studio:          studio,
-									refresh:         input.Refresh,
-									create_parent:   input.CreateParent,
-									box:             box,
-									excluded_fields: input.ExcludeFields,
-									task_type:       Studio,
+									studio:         studio,
+									refresh:        input.Refresh,
+									createParent:   input.CreateParent,
+									box:            box,
+									excludedFields: input.ExcludeFields,
+									taskType:       Studio,
 								})
 							}
 						} else {
@@ -519,14 +539,15 @@ func (s *Manager) StashBoxBatchStudioTag(ctx context.Context, input StashBoxBatc
 		} else if len(input.Names) > 0 {
 			// The user is batch adding studios
 			for i := range input.Names {
-				if len(input.Names[i]) > 0 {
+				name := input.Names[i]
+				if len(name) > 0 {
 					tasks = append(tasks, StashBoxBatchTagTask{
-						name:            &input.Names[i],
-						refresh:         false,
-						create_parent:   input.CreateParent,
-						box:             box,
-						excluded_fields: input.ExcludeFields,
-						task_type:       Studio,
+						name:           &name,
+						refresh:        false,
+						createParent:   input.CreateParent,
+						box:            box,
+						excludedFields: input.ExcludeFields,
+						taskType:       Studio,
 					})
 				}
 			}
@@ -554,12 +575,12 @@ func (s *Manager) StashBoxBatchStudioTag(ctx context.Context, input StashBoxBatc
 
 				for _, studio := range studios {
 					tasks = append(tasks, StashBoxBatchTagTask{
-						studio:          studio,
-						refresh:         input.Refresh,
-						create_parent:   input.CreateParent,
-						box:             box,
-						excluded_fields: input.ExcludeFields,
-						task_type:       Studio,
+						studio:         studio,
+						refresh:        input.Refresh,
+						createParent:   input.CreateParent,
+						box:            box,
+						excludedFields: input.ExcludeFields,
+						taskType:       Studio,
 					})
 				}
 				return nil
@@ -577,12 +598,9 @@ func (s *Manager) StashBoxBatchStudioTag(ctx context.Context, input StashBoxBatc
 
 		logger.Infof("Starting stash-box batch operation for %d studios", len(tasks))
 
-		var wg sync.WaitGroup
 		for _, task := range tasks {
-			wg.Add(1)
 			progress.ExecuteTask(task.Description(), func() {
 				task.Start(ctx)
-				wg.Done()
 			})
 
 			progress.Increment()

@@ -1,6 +1,11 @@
 import { Button, Tab, Nav, Dropdown } from "react-bootstrap";
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useHistory, Link } from "react-router-dom";
+import {
+  useHistory,
+  Link,
+  RouteComponentProps,
+  Redirect,
+} from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
@@ -24,20 +29,26 @@ import { GalleryImagesPanel } from "./GalleryImagesPanel";
 import { GalleryAddPanel } from "./GalleryAddPanel";
 import { GalleryFileInfoPanel } from "./GalleryFileInfoPanel";
 import { GalleryScenesPanel } from "./GalleryScenesPanel";
-import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEllipsisV,
+  faChevronRight,
+  faChevronLeft,
+} from "@fortawesome/free-solid-svg-icons";
 import { galleryPath, galleryTitle } from "src/core/galleries";
 import { GalleryChapterPanel } from "./GalleryChaptersPanel";
+import { useScrollToTopOnMount } from "src/hooks/scrollToTop";
 
 interface IProps {
   gallery: GQL.GalleryDataFragment;
+  add?: boolean;
 }
 
 interface IGalleryParams {
+  id: string;
   tab?: string;
 }
 
-export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
-  const { tab = "images" } = useParams<IGalleryParams>();
+export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
   const history = useHistory();
   const Toast = useToast();
   const intl = useIntl();
@@ -46,11 +57,12 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const [activeTabKey, setActiveTabKey] = useState("gallery-details-panel");
-  const activeRightTabKey = tab === "images" || tab === "add" ? tab : "images";
-  const setActiveRightTabKey = (newTab: string | null) => {
-    if (tab !== newTab) {
-      const tabParam = newTab === "images" ? "" : `/${newTab}`;
-      history.replace(`/galleries/${gallery.id}${tabParam}`);
+
+  const setMainTabKey = (newTabKey: string | null) => {
+    if (newTabKey === "add") {
+      history.replace(`/galleries/${gallery.id}/add`);
+    } else {
+      history.replace(`/galleries/${gallery.id}`);
     }
   };
 
@@ -59,6 +71,23 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
   const [updateGallery] = useGalleryUpdate();
 
   const [organizedLoading, setOrganizedLoading] = useState(false);
+
+  async function onSave(input: GQL.GalleryCreateInput) {
+    await updateGallery({
+      variables: {
+        input: {
+          id: gallery.id,
+          ...input,
+        },
+      },
+    });
+    Toast.success({
+      content: intl.formatMessage(
+        { id: "toast.updated_entity" },
+        { entity: intl.formatMessage({ id: "gallery" }).toLocaleLowerCase() }
+      ),
+    });
+  }
 
   const onOrganizedClick = async () => {
     try {
@@ -78,8 +107,8 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
     }
   };
 
-  function getCollapseButtonText() {
-    return collapsed ? ">" : "<";
+  function getCollapseButtonIcon() {
+    return collapsed ? faChevronRight : faChevronLeft;
   }
 
   async function onRescan() {
@@ -174,13 +203,29 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
       >
         <div>
           <Nav variant="tabs" className="mr-auto">
-            {gallery.scenes.length > 0 && (
+            <Nav.Item>
+              <Nav.Link eventKey="gallery-details-panel">
+                <FormattedMessage id="details" />
+              </Nav.Link>
+            </Nav.Item>
+            {gallery.scenes.length >= 1 ? (
               <Nav.Item>
                 <Nav.Link eventKey="gallery-scenes-panel">
-                  <FormattedMessage id="scenes" />
+                  <FormattedMessage
+                    id="countables.scenes"
+                    values={{ count: gallery.scenes.length }}
+                  />
                 </Nav.Link>
               </Nav.Item>
-            )}
+            ) : undefined}
+            {path ? (
+              <Nav.Item>
+                <Nav.Link eventKey="gallery-file-info-panel">
+                  <FormattedMessage id="file_info" />
+                  <Counter count={gallery.files.length} hideZero hideOne />
+                </Nav.Link>
+              </Nav.Item>
+            ) : undefined}
             <Nav.Item>
               <Nav.Link eventKey="gallery-chapter-panel">
                 <FormattedMessage id="chapters" />
@@ -210,6 +255,7 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
             <GalleryEditPanel
               isVisible={activeTabKey === "gallery-edit-panel"}
               gallery={gallery}
+              onSubmit={onSave}
               onDelete={() => setIsDeleteAlertOpen(true)}
             />
           </Tab.Pane>
@@ -229,10 +275,23 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
     }
 
     return (
-      <GalleryImagesPanel
-        active={activeRightTabKey == "images"}
-        gallery={gallery}
-      />
+      <Tab.Container
+        activeKey={add ? "add" : "images"}
+        unmountOnExit
+        onSelect={setMainTabKey}
+      >
+        <div>
+        </div>
+
+        <Tab.Content>
+          <Tab.Pane eventKey="images">
+            <GalleryImagesPanel active={!add} gallery={gallery} />
+          </Tab.Pane>
+          <Tab.Pane eventKey="add">
+            <GalleryAddPanel active={!!add} gallery={gallery} />
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
     );
   }
 
@@ -280,7 +339,7 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
       </div>
       <div className="gallery-divider d-none d-xl-block">
         <Button onClick={() => setCollapsed(!collapsed)}>
-          {getCollapseButtonText()}
+          <Icon className="fa-fw" icon={getCollapseButtonIcon()} />
         </Button>
       </div>
       <div className={`gallery-container ${collapsed ? "expanded" : ""}`}>
@@ -290,14 +349,34 @@ export const GalleryPage: React.FC<IProps> = ({ gallery }) => {
   );
 };
 
-const GalleryLoader: React.FC = () => {
-  const { id } = useParams<{ id?: string }>();
-  const { data, loading, error } = useFindGallery(id ?? "");
+const GalleryLoader: React.FC<RouteComponentProps<IGalleryParams>> = ({
+  location,
+  match,
+}) => {
+  const { id, tab } = match.params;
+  const { data, loading, error } = useFindGallery(id);
+
+  useScrollToTopOnMount();
 
   if (loading) return <LoadingIndicator />;
   if (error) return <ErrorMessage error={error.message} />;
   if (!data?.findGallery)
     return <ErrorMessage error={`No gallery found with id ${id}.`} />;
+
+  if (tab === "add") {
+    return <GalleryPage add gallery={data.findGallery} />;
+  }
+
+  if (tab) {
+    return (
+      <Redirect
+        to={{
+          ...location,
+          pathname: `/galleries/${id}`,
+        }}
+      />
+    );
+  }
 
   return <GalleryPage gallery={data.findGallery} />;
 };

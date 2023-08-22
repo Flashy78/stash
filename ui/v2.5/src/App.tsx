@@ -28,7 +28,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { MainNavbar } from "./components/MainNavbar";
 import { PageNotFound } from "./components/PageNotFound";
 import * as GQL from "./core/generated-graphql";
-import { TITLE_SUFFIX } from "./components/Shared/constants";
+import { makeTitleProps } from "./hooks/title";
 import { LoadingIndicator } from "./components/Shared/LoadingIndicator";
 
 import { ConfigurationProvider } from "./hooks/Config";
@@ -39,6 +39,7 @@ import { IUIConfig } from "./core/config";
 import { releaseNotes } from "./docs/en/ReleaseNotes";
 import { getPlatformURL } from "./core/createClient";
 import { lazyComponent } from "./utils/lazyComponent";
+import { isPlatformUniquelyRenderedByApple } from "./utils/apple";
 
 const Performers = lazyComponent(
   () => import("./components/Performers/Performers")
@@ -67,6 +68,8 @@ const SceneDuplicateChecker = lazyComponent(
   () => import("./components/SceneDuplicateChecker/SceneDuplicateChecker")
 );
 
+const appleRendering = isPlatformUniquelyRenderedByApple();
+
 initPolyfills();
 
 MousetrapPause(Mousetrap);
@@ -94,6 +97,20 @@ export const App: React.FC = () => {
 
   // use en-GB as default messages if any messages aren't found in the chosen language
   const [messages, setMessages] = useState<{}>();
+  const [customMessages, setCustomMessages] = useState<{}>();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(getPlatformURL() + "customlocales");
+        if (res.ok) {
+          setCustomMessages(await res.json());
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const setLocale = async () => {
@@ -106,15 +123,6 @@ export const App: React.FC = () => {
       const defaultMessages = (await locales[defaultMessageLanguage]()).default;
       const mergedMessages = cloneDeep(Object.assign({}, defaultMessages));
       const chosenMessages = (await locales[messageLanguage]()).default;
-      let customMessages = {};
-      try {
-        const res = await fetch(getPlatformURL() + "customlocales");
-        if (res.ok) {
-          customMessages = await res.json();
-        }
-      } catch (err) {
-        console.log(err);
-      }
 
       mergeWith(
         mergedMessages,
@@ -142,7 +150,7 @@ export const App: React.FC = () => {
     };
 
     setLocale();
-  }, [language]);
+  }, [customMessages, language]);
 
   const location = useLocation();
   const history = useHistory();
@@ -246,6 +254,8 @@ export const App: React.FC = () => {
     );
   }
 
+  const titleProps = makeTitleProps();
+
   return (
     <ErrorBoundary>
       {messages ? (
@@ -264,12 +274,13 @@ export const App: React.FC = () => {
                 <LightboxProvider>
                   <ManualProvider>
                     <InteractiveProvider>
-                      <Helmet
-                        titleTemplate={`%s ${TITLE_SUFFIX}`}
-                        defaultTitle="Stash"
-                      />
+                      <Helmet {...titleProps} />
                       {maybeRenderNavbar()}
-                      <div className="main container-fluid">
+                      <div
+                        className={`main container-fluid ${
+                          appleRendering ? "apple" : ""
+                        }`}
+                      >
                         {renderContent()}
                       </div>
                     </InteractiveProvider>
