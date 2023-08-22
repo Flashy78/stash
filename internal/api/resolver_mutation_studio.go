@@ -50,16 +50,9 @@ func (r *mutationResolver) StudioCreate(ctx context.Context, input StudioCreateI
 			}
 		}
 
-	updatedStudio.URL = translator.optionalString(input.URL, "url")
-
-	if input.ParentID != nil {
-		parentID, _ := strconv.Atoi(*input.ParentID)
-		if parentID > 0 {
-			// This is to be set directly as we know it has a value and the translator won't have the field
-			updatedStudio.ParentID = models.NewOptionalInt(parentID)
-		}
-	} else {
-		updatedStudio.ParentID = translator.optionalInt(nil, "parent_id")
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	r.hookExecutor.ExecutePostHooks(ctx, s.ID, plugin.StudioCreatePost, input, nil)
@@ -114,7 +107,7 @@ func (r *mutationResolver) StudioUpdate(ctx context.Context, input StudioUpdateI
 	imageIncluded := translator.hasField("image")
 	if input.Image != nil {
 		var err error
-		updatedStudio.ImageBytes, err = utils.ProcessImageInput(ctx, *input.Image)
+		imageData, err = utils.ProcessImageInput(ctx, *input.Image)
 		if err != nil {
 			return nil, err
 		}
@@ -132,10 +125,6 @@ func (r *mutationResolver) StudioUpdate(ctx context.Context, input StudioUpdateI
 		if err != nil {
 			return err
 		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
 
 		if imageIncluded {
 			if err := qb.UpdateImage(ctx, s.ID, imageData); err != nil {

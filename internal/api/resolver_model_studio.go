@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 
+	"github.com/stashapp/stash/internal/api/loaders"
 	"github.com/stashapp/stash/internal/api/urlbuilders"
 	"github.com/stashapp/stash/pkg/gallery"
 	"github.com/stashapp/stash/pkg/hash/md5"
@@ -110,7 +111,7 @@ func (r *studioResolver) ParentStudio(ctx context.Context, obj *models.Studio) (
 
 func (r *studioResolver) ChildStudios(ctx context.Context, obj *models.Studio) (ret []*models.Studio, err error) {
 	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
-		ret, err = r.repository.Studio.Find(ctx, *obj.ParentID)
+		ret, err = r.repository.Studio.FindChildren(ctx, obj.ID)
 		return err
 	}); err != nil {
 		return nil, err
@@ -136,6 +137,8 @@ func (r *studioResolver) Rating(ctx context.Context, obj *models.Studio) (*int, 
 		rating := models.Rating100To5(*obj.Rating)
 		return &rating, nil
 	}
+	return nil, nil
+}
 
 func (r *studioResolver) Rating100(ctx context.Context, obj *models.Studio) (*int, error) {
 	return obj.Rating, nil

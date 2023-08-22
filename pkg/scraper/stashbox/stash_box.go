@@ -898,56 +898,6 @@ func (c Client) FindStashBoxStudio(ctx context.Context, query string) (*models.S
 	return ret, nil
 }
 
-func (c Client) FindStashBoxStudio(ctx context.Context, query string) (*models.ScrapedStudio, error) {
-	var studio *graphql.FindStudio
-
-	_, err := uuid.FromString(query)
-	if err == nil {
-		// Confirmed the user passed in a Stash ID
-		studio, err = c.client.FindStudio(ctx, &query, nil)
-	} else {
-		// Otherwise assume they're searching on a name
-		studio, err = c.client.FindStudio(ctx, nil, &query)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	var ret *models.ScrapedStudio
-	if studio.FindStudio != nil {
-		if err := txn.WithReadTxn(ctx, c.txnManager, func(ctx context.Context) error {
-			ret = studioFragmentToScrapedStudio(*studio.FindStudio)
-
-			err = match.ScrapedStudio(ctx, c.repository.Studio, ret, &c.box.Endpoint)
-			if err != nil {
-				return err
-			}
-
-			if studio.FindStudio.Parent != nil {
-				parentStudio, err := c.client.FindStudio(ctx, &studio.FindStudio.Parent.ID, nil)
-				if err != nil {
-					return err
-				}
-
-				if parentStudio.FindStudio != nil {
-					ret.Parent = studioFragmentToScrapedStudio(*parentStudio.FindStudio)
-
-					err = match.ScrapedStudio(ctx, c.repository.Studio, ret.Parent, &c.box.Endpoint)
-					if err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		}); err != nil {
-			return nil, err
-		}
-	}
-
-	return ret, nil
-}
-
 func (c Client) GetUser(ctx context.Context) (*graphql.Me, error) {
 	return c.client.Me(ctx)
 }

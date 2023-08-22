@@ -13,7 +13,6 @@ import (
 	"github.com/stashapp/stash/pkg/sliceutil"
 	"github.com/stashapp/stash/pkg/txn"
 	"github.com/stashapp/stash/pkg/utils"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -210,18 +209,7 @@ func (t *SceneIdentifier) getSceneUpdater(ctx context.Context, s *models.Scene, 
 			return nil, err
 		}
 	}
-	addSkipSingleNamePerformerTag := false
 	if performerIDs != nil {
-		// If there is a -1 id, that means a performer was skipped due to SkipSingleNamePerformers
-		i := slices.Index(performerIDs, -1)
-		if i >= 0 {
-			performerIDs = slices.Delete(performerIDs, i, i+1)
-
-			if options.SkipSingleNamePerformerTag != nil && len(*options.SkipSingleNamePerformerTag) > 0 {
-				// Tag it with the skipped single name performers tag
-				addSkipSingleNamePerformerTag = true
-			}
-		}
 		ret.Partial.PerformerIDs = &models.UpdateIDs{
 			IDs:  performerIDs,
 			Mode: models.RelationshipUpdateModeSet,

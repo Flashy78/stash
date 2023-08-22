@@ -195,6 +195,8 @@ github.com/golang-migrate/migrate/v4/source/iofs
 # github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 ## explicit
 github.com/golang/groupcache/lru
+# github.com/google/go-cmp v0.5.8
+## explicit; go 1.13
 # github.com/gorilla/securecookie v1.1.1
 ## explicit
 github.com/gorilla/securecookie
@@ -419,10 +421,6 @@ go.uber.org/atomic
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
-## explicit; go 1.20
-golang.org/x/exp/constraints
-golang.org/x/exp/slices
 # golang.org/x/image v0.5.0
 ## explicit; go 1.12
 golang.org/x/image/bmp
