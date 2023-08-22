@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stashapp/stash/pkg/hash/md5"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/models/jsonschema"
 	"github.com/stashapp/stash/pkg/utils"
@@ -13,7 +12,6 @@ import (
 
 type NameFinderCreatorUpdater interface {
 	NameFinderCreator
-	FindByName(ctx context.Context, name string, nocase bool) (*models.Studio, error)
 	Update(ctx context.Context, updatedStudio *models.Studio) error
 	UpdateImage(ctx context.Context, studioID int, image []byte) error
 }
@@ -80,15 +78,16 @@ func (i *Importer) populateParentStudio(ctx context.Context) error {
 }
 
 func (i *Importer) createParentStudio(ctx context.Context, name string) (int, error) {
-	var dbInput models.StudioDBInput
-	dbInput.StudioCreate = models.NewStudio(name)
+	newStudio := &models.Studio{
+		Name: name,
+	}
 
-	stuiodID, err := i.ReaderWriter.Create(ctx, dbInput)
+	err := i.ReaderWriter.Create(ctx, newStudio)
 	if err != nil {
 		return 0, err
 	}
 
-	return *stuiodID, nil
+	return newStudio.ID, nil
 }
 
 func (i *Importer) PostImport(ctx context.Context, id int) error {
@@ -121,15 +120,13 @@ func (i *Importer) FindExistingID(ctx context.Context) (*int, error) {
 }
 
 func (i *Importer) Create(ctx context.Context) (*int, error) {
-	var dbInput models.StudioDBInput
-	dbInput.StudioCreate = &i.studio
-
-	studioID, err := i.ReaderWriter.Create(ctx, dbInput)
+	err := i.ReaderWriter.Create(ctx, &i.studio)
 	if err != nil {
 		return nil, fmt.Errorf("error creating studio: %v", err)
 	}
 
-	return studioID, nil
+	id := i.studio.ID
+	return &id, nil
 }
 
 func (i *Importer) Update(ctx context.Context, id int) error {
@@ -144,10 +141,7 @@ func (i *Importer) Update(ctx context.Context, id int) error {
 }
 
 func studioJSONtoStudio(studioJSON jsonschema.Studio) models.Studio {
-	checksum := md5.FromString(studioJSON.Name)
-
 	newStudio := models.Studio{
-		Checksum:      checksum,
 		Name:          studioJSON.Name,
 		URL:           studioJSON.URL,
 		Aliases:       models.NewRelatedStrings(studioJSON.Aliases),

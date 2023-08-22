@@ -24,6 +24,7 @@ var (
 	scenesPerformersJoinTable = goqu.T(performersScenesTable)
 	scenesStashIDsJoinTable   = goqu.T("scene_stash_ids")
 	scenesMoviesJoinTable     = goqu.T(moviesScenesTable)
+	scenesURLsJoinTable       = goqu.T(scenesURLsTable)
 
 	performersAliasesJoinTable  = goqu.T(performersAliasesTable)
 	performersTagsJoinTable     = goqu.T(performersTagsTable)
@@ -107,6 +108,11 @@ var (
 		},
 		fkColumn: galleriesScenesJoinTable.Col(sceneIDColumn),
 	}
+
+	galleriesChaptersTableMgr = &table{
+		table:    goqu.T(galleriesChaptersTable),
+		idColumn: goqu.T(galleriesChaptersTable).Col(idColumn),
+	}
 )
 
 var (
@@ -157,6 +163,14 @@ var (
 			table:    scenesMoviesJoinTable,
 			idColumn: scenesMoviesJoinTable.Col(sceneIDColumn),
 		},
+	}
+
+	scenesURLsTableMgr = &orderedValueTable[string]{
+		table: table{
+			table:    scenesURLsJoinTable,
+			idColumn: scenesURLsJoinTable.Col(sceneIDColumn),
+		},
+		valueColumn: scenesURLsJoinTable.Col(sceneURLColumn),
 	}
 )
 
@@ -257,5 +271,12 @@ var (
 	blobTableMgr = &table{
 		table:    goqu.T(blobTable),
 		idColumn: goqu.T(blobTable).Col(blobChecksumColumn),
+	}
+)
+
+var (
+	savedFilterTableMgr = &table{
+		table:    goqu.T(savedFilterTable),
+		idColumn: goqu.T(savedFilterTable).Col(idColumn),
 	}
 )

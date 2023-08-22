@@ -5,6 +5,8 @@ import * as GQL from "src/core/generated-graphql";
 import { useUpdateStudio } from "../queries";
 import StudioModal from "../scenes/StudioModal";
 import { faTags } from "@fortawesome/free-solid-svg-icons";
+import { useStudioCreate } from "src/core/StashService";
+import { useIntl } from "react-intl";
 
 interface IStashSearchResultProps {
   studio: GQL.SlimStudioDataFragment;
@@ -24,21 +26,62 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   excludedStudioFields,
   endpoint,
 }) => {
-  const [modalStudio, setModalStudio] = useState<
-    GQL.ScrapedStudioDataFragment | undefined
-  >();
+  const intl = useIntl();
+
+  const [modalStudio, setModalStudio] =
+    useState<GQL.ScrapedStudioDataFragment>();
   const [saveState, setSaveState] = useState<string>("");
   const [error, setError] = useState<{ message?: string; details?: string }>(
     {}
   );
 
+  const [createStudio] = useStudioCreate();
   const updateStudio = useUpdateStudio();
 
-  const handleSave = async (input: GQL.StudioCreateInput) => {
+  function handleSaveError(name: string, message: string) {
+    setError({
+      message: intl.formatMessage(
+        { id: "studio_tagger.failed_to_save_studio" },
+        { studio: name }
+      ),
+      details:
+        message === "UNIQUE constraint failed: studios.name"
+          ? "Name already exists"
+          : message,
+    });
+  }
+
+  const handleSave = async (
+    input: GQL.StudioCreateInput,
+    parentInput?: GQL.StudioCreateInput
+  ) => {
     setError({});
-    setSaveState("Saving studio");
     setModalStudio(undefined);
 
+    if (parentInput) {
+      setSaveState("Saving parent studio");
+
+      try {
+        // if parent id is set, then update the existing studio
+        if (input.parent_id) {
+          const parentUpdateData: GQL.StudioUpdateInput = {
+            ...parentInput,
+            id: input.parent_id,
+          };
+          await updateStudio(parentUpdateData);
+        } else {
+          const parentRes = await createStudio({
+            variables: { input: parentInput },
+          });
+          input.parent_id = parentRes.data?.studioCreate?.id;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (e: any) {
+        handleSaveError(parentInput.name, e.message ?? "");
+      }
+    }
+
+    setSaveState("Saving studio");
     const updateData: GQL.StudioUpdateInput = {
       ...input,
       id: studio.id,
@@ -47,14 +90,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     const res = await updateStudio(updateData);
 
     if (!res?.data?.studioUpdate)
-      setError({
-        message: `Failed to save studio "${studio.name}"`,
-        details:
-          res?.errors?.[0].message ===
-          "UNIQUE constraint failed: studios.checksum"
-            ? "Name already exists"
-            : res?.errors?.[0].message,
-      });
+      handleSaveError(studio.name, res?.errors?.[0]?.message ?? "");
     else onStudioTagged(studio);
     setSaveState("");
   };

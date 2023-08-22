@@ -3,13 +3,10 @@ package models
 import (
 	"context"
 	"time"
-
-	"github.com/stashapp/stash/pkg/hash/md5"
 )
 
 type Studio struct {
 	ID        int       `json:"id"`
-	Checksum  string    `json:"checksum"`
 	Name      string    `json:"name"`
 	URL       string    `json:"url"`
 	ParentID  *int      `json:"parent_id"`
@@ -19,8 +16,6 @@ type Studio struct {
 	Rating        *int   `json:"rating"`
 	Details       string `json:"details"`
 	IgnoreAutoTag bool   `json:"ignore_auto_tag"`
-
-	ImageBytes []byte
 
 	Aliases  RelatedStrings  `json:"aliases"`
 	StashIDs RelatedStashIDs `json:"stash_ids"`
@@ -53,7 +48,6 @@ func (s *Studio) LoadRelationships(ctx context.Context, l PerformerReader) error
 // StudioPartial represents part of a Studio object. It is used to update the database entry.
 type StudioPartial struct {
 	ID       int
-	Checksum OptionalString
 	Name     OptionalString
 	URL      OptionalString
 	ParentID OptionalInt
@@ -64,30 +58,8 @@ type StudioPartial struct {
 	UpdatedAt     OptionalTime
 	IgnoreAutoTag OptionalBool
 
-	// True if the image should be updated with ImageBytes
-	ImageIncluded bool
-	// Either contains the image, or is empty if the image should be removed
-	ImageBytes []byte
-
 	Aliases  *UpdateStrings
 	StashIDs *UpdateStashIDs
-}
-
-func NewStudio(name string) *Studio {
-	currentTime := time.Now()
-	return &Studio{
-		Checksum:  md5.FromString(name),
-		Name:      name,
-		CreatedAt: currentTime,
-		UpdatedAt: currentTime,
-	}
-}
-
-func NewStudioPartial() StudioPartial {
-	updatedTime := time.Now()
-	return StudioPartial{
-		UpdatedAt: NewOptionalTime(updatedTime),
-	}
 }
 
 type Studios []*Studio

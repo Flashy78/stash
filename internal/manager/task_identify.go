@@ -72,11 +72,11 @@ func (j *IdentifyJob) Execute(ctx context.Context, progress *job.Progress) {
 			var err error
 			scene, err := instance.Repository.Scene.Find(ctx, id)
 			if err != nil {
-				return fmt.Errorf("error finding scene with id %d: %w", id, err)
+				return fmt.Errorf("finding scene id %d: %w", id, err)
 			}
 
 			if scene == nil {
-				return fmt.Errorf("%w: scene with id %d", models.ErrNotFound, id)
+				return fmt.Errorf("scene with id %d not found", id)
 			}
 
 			j.identifyScene(ctx, scene, sources)
@@ -134,9 +134,9 @@ func (j *IdentifyJob) identifyScene(ctx context.Context, s *models.Scene, source
 	j.progress.ExecuteTask("Identifying "+s.Path, func() {
 		task := identify.SceneIdentifier{
 			SceneReaderUpdater: instance.Repository.Scene,
-			StudioCreator:      instance.Repository.Studio,
+			StudioReaderWriter: instance.Repository.Studio,
 			PerformerCreator:   instance.Repository.Performer,
-			TagCreator:         instance.Repository.Tag,
+			TagCreatorFinder:   instance.Repository.Tag,
 
 			DefaultOptions:              j.input.Options,
 			Sources:                     sources,

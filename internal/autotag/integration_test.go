@@ -98,14 +98,16 @@ func createPerformer(ctx context.Context, pqb models.PerformerWriter) error {
 
 func createStudio(ctx context.Context, qb models.StudioWriter, name string) (*int, error) {
 	// create the studio
-	studioDBInput := models.StudioDBInput{
-		StudioCreate: &models.Studio{
-			Checksum: name,
-			Name:     name,
-		},
+	studio := models.Studio{
+		Name: name,
 	}
 
-	return qb.Create(ctx, studioDBInput)
+	err := qb.Create(ctx, &studio)
+	if err != nil {
+		return nil, err
+	}
+
+	return &studio, nil
 }
 
 func createTag(ctx context.Context, qb models.TagWriter) error {
@@ -114,7 +116,7 @@ func createTag(ctx context.Context, qb models.TagWriter) error {
 		Name: testName,
 	}
 
-	_, err := qb.Create(ctx, tag)
+	err := qb.Create(ctx, &tag)
 	if err != nil {
 		return err
 	}
@@ -173,7 +175,7 @@ func createScenes(ctx context.Context, sqb models.SceneReaderWriter, folderStore
 
 	s := &models.Scene{
 		Title:    expectedMatchTitle,
-		URL:      existingStudioSceneName,
+		Code:     existingStudioSceneName,
 		StudioID: &existingStudioID,
 	}
 	if err := createScene(ctx, sqb, s, f); err != nil {
@@ -621,7 +623,7 @@ func TestParseStudioScenes(t *testing.T) {
 
 		for _, scene := range scenes {
 			// check for existing studio id scene first
-			if scene.URL == existingStudioSceneName {
+			if scene.Code == existingStudioSceneName {
 				if scene.StudioID == nil || *scene.StudioID != existingStudioID {
 					t.Error("Incorrectly overwrote studio ID for scene with existing studio ID")
 				}
