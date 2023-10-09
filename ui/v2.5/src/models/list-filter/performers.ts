@@ -5,8 +5,6 @@ import {
   createBooleanCriterionOption,
   createDateCriterionOption,
   createMandatoryTimestampCriterionOption,
-  NumberCriterionOption,
-  NullNumberCriterionOption,
 } from "./criteria/criterion";
 import { FavoriteCriterionOption } from "./criteria/favorite";
 import { GenderCriterionOption } from "./criteria/gender";
@@ -17,6 +15,8 @@ import { StudiosCriterionOption } from "./criteria/studios";
 import { TagsCriterionOption } from "./criteria/tags";
 import { ListFilterOptions } from "./filter-options";
 import { CriterionType, DisplayMode } from "./types";
+import { CountryCriterionOption } from "./criteria/country";
+import { RatingCriterionOption } from "./criteria/rating";
 
 const defaultSortBy = "name";
 const sortByOptions = [
@@ -56,7 +56,7 @@ const stringCriteria: CriterionType[] = [
   "name",
   "disambiguation",
   "details",
-  "country",
+  "ethnicity",
   "hair_color",
   "eye_color",
   "measurements",
@@ -73,7 +73,8 @@ const criterionOptions = [
   StudiosCriterionOption,
   createMandatoryNumberCriterionOption("scene_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
-  new NumberCriterionOption("height", "height_cm", "height_cm"),
+  CountryCriterionOption,
+  createNumberCriterionOption("height_cm", "height"),
   ...numberCriteria.map((c) => createNumberCriterionOption(c)),
   ...stringCriteria.map((c) => createStringCriterionOption(c)),
   createDateCriterionOption("birthdate"),

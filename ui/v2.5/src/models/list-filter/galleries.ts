@@ -1,10 +1,8 @@
 import {
   createMandatoryNumberCriterionOption,
   createStringCriterionOption,
-  NullNumberCriterionOption,
   createDateCriterionOption,
   createMandatoryTimestampCriterionOption,
-  createPathCriterionOption,
 } from "./criteria/criterion";
 import { PerformerFavoriteCriterionOption } from "./criteria/favorite";
 import { GalleryIsMissingCriterionOption } from "./criteria/is-missing";
@@ -19,6 +17,8 @@ import {
 } from "./criteria/tags";
 import { ListFilterOptions, MediaSortByOptions } from "./filter-options";
 import { DisplayMode } from "./types";
+import { RatingCriterionOption } from "./criteria/rating";
+import { PathCriterionOption } from "./criteria/path";
 
 const defaultSortBy = "date";
 
@@ -33,10 +33,10 @@ const criterionOptions = [
   createStringCriterionOption("details"),
   TagsCriterionOption,
   HasChaptersCriterionOption,
-  createStringCriterionOption("tag_count"),
+  createMandatoryNumberCriterionOption("tag_count"),
   PerformerTagsCriterionOption,
   PerformersCriterionOption,
-  createStringCriterionOption("performer_count"),
+  createMandatoryNumberCriterionOption("performer_count"),
   createMandatoryNumberCriterionOption("performer_age"),
   StudiosCriterionOption,
 ];

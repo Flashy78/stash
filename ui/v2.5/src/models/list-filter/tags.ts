@@ -38,6 +38,10 @@ const criterionOptions = [
   createMandatoryNumberCriterionOption("scene_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
   createMandatoryNumberCriterionOption("performer_count"),
+  ParentTagsCriterionOption,
+  new MandatoryNumberCriterionOption("parent_tag_count", "parent_count"),
+  ChildTagsCriterionOption,
+  new MandatoryNumberCriterionOption("sub_tag_count", "child_count"),
 ];
 
 export const TagListFilterOptions = new ListFilterOptions(

@@ -2,15 +2,15 @@ import {
   createMandatoryNumberCriterionOption,
   createMandatoryStringCriterionOption,
   createStringCriterionOption,
-  NullNumberCriterionOption,
   createMandatoryTimestampCriterionOption,
   createDateCriterionOption,
-  createPathCriterionOption,
 } from "./criteria/criterion";
 import { PerformerFavoriteCriterionOption } from "./criteria/favorite";
 import { ImageIsMissingCriterionOption } from "./criteria/is-missing";
 import { OrganizedCriterionOption } from "./criteria/organized";
+import { PathCriterionOption } from "./criteria/path";
 import { PerformersCriterionOption } from "./criteria/performers";
+import { RatingCriterionOption } from "./criteria/rating";
 import { ResolutionCriterionOption } from "./criteria/resolution";
 import { StudiosCriterionOption } from "./criteria/studios";
 import {
