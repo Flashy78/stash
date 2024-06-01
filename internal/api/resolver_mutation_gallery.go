@@ -13,6 +13,7 @@ import (
 	"github.com/stashapp/stash/pkg/image"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/plugin"
+	"github.com/stashapp/stash/pkg/plugin/hook"
 	"github.com/stashapp/stash/pkg/sliceutil/stringslice"
 	"github.com/stashapp/stash/pkg/utils"
 )
@@ -43,8 +44,10 @@ func (r *mutationResolver) GalleryCreate(ctx context.Context, input GalleryCreat
 	newGallery := models.NewGallery()
 
 	newGallery.Title = input.Title
+	newGallery.Code = translator.string(input.Code)
 	newGallery.Details = translator.string(input.Details)
-	newGallery.Rating = translator.ratingConversion(input.Rating, input.Rating100)
+	newGallery.Photographer = translator.string(input.Photographer)
+	newGallery.Rating = input.Rating100
 
 	var err error
 
@@ -88,7 +91,7 @@ func (r *mutationResolver) GalleryCreate(ctx context.Context, input GalleryCreat
 		return nil, err
 	}
 
-	r.hookExecutor.ExecutePostHooks(ctx, newGallery.ID, plugin.GalleryCreatePost, input, nil)
+	r.hookExecutor.ExecutePostHooks(ctx, newGallery.ID, hook.GalleryCreatePost, input, nil)
 	return r.getGallery(ctx, newGallery.ID)
 }
 
@@ -106,7 +109,7 @@ func (r *mutationResolver) GalleryUpdate(ctx context.Context, input models.Galle
 	}
 
 	// execute post hooks outside txn
-	r.hookExecutor.ExecutePostHooks(ctx, ret.ID, plugin.GalleryUpdatePost, input, translator.getFields())
+	r.hookExecutor.ExecutePostHooks(ctx, ret.ID, hook.GalleryUpdatePost, input, translator.getFields())
 	return r.getGallery(ctx, ret.ID)
 }
 
@@ -140,7 +143,7 @@ func (r *mutationResolver) GalleriesUpdate(ctx context.Context, input []*models.
 			inputMap: inputMaps[i],
 		}
 
-		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, plugin.GalleryUpdatePost, input, translator.getFields())
+		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, hook.GalleryUpdatePost, input, translator.getFields())
 
 		gallery, err = r.getGallery(ctx, gallery.ID)
 		if err != nil {
@@ -182,8 +185,10 @@ func (r *mutationResolver) galleryUpdate(ctx context.Context, input models.Galle
 		updatedGallery.Title = models.NewOptionalString(*input.Title)
 	}
 
+	updatedGallery.Code = translator.optionalString(input.Code, "code")
 	updatedGallery.Details = translator.optionalString(input.Details, "details")
-	updatedGallery.Rating = translator.optionalRatingConversion(input.Rating, input.Rating100)
+	updatedGallery.Photographer = translator.optionalString(input.Photographer, "photographer")
+	updatedGallery.Rating = translator.optionalInt(input.Rating100, "rating100")
 	updatedGallery.Organized = translator.optionalBool(input.Organized, "organized")
 
 	updatedGallery.Date, err = translator.optionalDate(input.Date, "date")
@@ -257,8 +262,10 @@ func (r *mutationResolver) BulkGalleryUpdate(ctx context.Context, input BulkGall
 	// Populate gallery from the input
 	updatedGallery := models.NewGalleryPartial()
 
+	updatedGallery.Code = translator.optionalString(input.Code, "code")
 	updatedGallery.Details = translator.optionalString(input.Details, "details")
-	updatedGallery.Rating = translator.optionalRatingConversion(input.Rating, input.Rating100)
+	updatedGallery.Photographer = translator.optionalString(input.Photographer, "photographer")
+	updatedGallery.Rating = translator.optionalInt(input.Rating100, "rating100")
 	updatedGallery.Organized = translator.optionalBool(input.Organized, "organized")
 	updatedGallery.URLs = translator.optionalURLsBulk(input.Urls, input.URL)
 
@@ -307,7 +314,7 @@ func (r *mutationResolver) BulkGalleryUpdate(ctx context.Context, input BulkGall
 	// execute post hooks outside of txn
 	var newRet []*models.Gallery
 	for _, gallery := range ret {
-		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, plugin.GalleryUpdatePost, input, translator.getFields())
+		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, hook.GalleryUpdatePost, input, translator.getFields())
 
 		gallery, err := r.getGallery(ctx, gallery.ID)
 		if err != nil {
@@ -380,9 +387,9 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 		}
 	}
 
-	// call post hook after performing the other actions
+	// call post hook after performing the other actionsa
 	for _, gallery := range galleries {
-		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, plugin.GalleryDestroyPost, plugin.GalleryDestroyInput{
+		r.hookExecutor.ExecutePostHooks(ctx, gallery.ID, hook.GalleryDestroyPost, plugin.GalleryDestroyInput{
 			GalleryDestroyInput: input,
 			Checksum:            gallery.PrimaryChecksum(),
 			Path:                gallery.Path,
@@ -391,7 +398,7 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 
 	// call image destroy post hook as well
 	for _, img := range imgsDestroyed {
-		r.hookExecutor.ExecutePostHooks(ctx, img.ID, plugin.ImageDestroyPost, plugin.ImageDestroyInput{
+		r.hookExecutor.ExecutePostHooks(ctx, img.ID, hook.ImageDestroyPost, plugin.ImageDestroyInput{
 			Checksum: img.Checksum,
 			Path:     img.Path,
 		}, nil)
@@ -512,7 +519,7 @@ func (r *mutationResolver) GalleryChapterCreate(ctx context.Context, input Galle
 		return nil, err
 	}
 
-	r.hookExecutor.ExecutePostHooks(ctx, newChapter.ID, plugin.GalleryChapterCreatePost, input, nil)
+	r.hookExecutor.ExecutePostHooks(ctx, newChapter.ID, hook.GalleryChapterCreatePost, input, nil)
 	return r.getGalleryChapter(ctx, newChapter.ID)
 }
 
@@ -578,7 +585,7 @@ func (r *mutationResolver) GalleryChapterUpdate(ctx context.Context, input Galle
 		return nil, err
 	}
 
-	r.hookExecutor.ExecutePostHooks(ctx, chapterID, plugin.GalleryChapterUpdatePost, input, translator.getFields())
+	r.hookExecutor.ExecutePostHooks(ctx, chapterID, hook.GalleryChapterUpdatePost, input, translator.getFields())
 	return r.getGalleryChapter(ctx, chapterID)
 }
 
@@ -606,7 +613,7 @@ func (r *mutationResolver) GalleryChapterDestroy(ctx context.Context, id string)
 		return false, err
 	}
 
-	r.hookExecutor.ExecutePostHooks(ctx, chapterID, plugin.GalleryChapterDestroyPost, id, nil)
+	r.hookExecutor.ExecutePostHooks(ctx, chapterID, hook.GalleryChapterDestroyPost, id, nil)
 
 	return true, nil
 }

@@ -37,7 +37,7 @@ const CommonLinkComponent: React.FC<ICommonLinkProps> = ({
 };
 
 interface IPerformerLinkProps {
-  performer: INamedObject;
+  performer: INamedObject & { disambiguation?: string | null };
   linkType?: "scene" | "gallery" | "image";
   className?: string;
 }
@@ -63,7 +63,10 @@ export const PerformerLink: React.FC<IPerformerLinkProps> = ({
 
   return (
     <CommonLinkComponent link={link} className={className}>
-      {title}
+      <span>{title}</span>
+      {performer.disambiguation && (
+        <span className="performer-disambiguation">{` (${performer.disambiguation})`}</span>
+      )}
     </CommonLinkComponent>
   );
 };
@@ -235,17 +238,15 @@ export const TagLink: React.FC<ITagLinkProps> = ({
   return (
     <CommonLinkComponent link={link} className={className}>
       <TagPopover id={tag.id ?? ""} placement={hoverPlacement}>
-        <Link to={link}>
-          {title}
-          {showHierarchyIcon && (
-            <OverlayTrigger placement="top" overlay={tooltip}>
-              <span className="icon-wrapper">
-                <span className="vertical-line">|</span>
-                <Icon icon={faFolderTree} className="tag-icon" />
-              </span>
-            </OverlayTrigger>
-          )}
-        </Link>
+        {title}
+        {showHierarchyIcon && (
+          <OverlayTrigger placement="top" overlay={tooltip}>
+            <span className="icon-wrapper">
+              <span className="vertical-line">|</span>
+              <Icon icon={faFolderTree} className="tag-icon" />
+            </span>
+          </OverlayTrigger>
+        )}
       </TagPopover>
     </CommonLinkComponent>
   );

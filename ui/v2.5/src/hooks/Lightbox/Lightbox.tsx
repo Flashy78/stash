@@ -298,8 +298,7 @@ export const LightboxComponent: React.FC<IProps> = ({
     if (isVisible) {
       if (index === null) setIndex(initialIndex);
       document.body.style.overflow = "hidden";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (Mousetrap as any).pause();
+      Mousetrap.pause();
     }
   }, [initialIndex, isVisible, setIndex, index]);
 
@@ -323,8 +322,7 @@ export const LightboxComponent: React.FC<IProps> = ({
 
     hide();
     document.body.style.overflow = "auto";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (Mousetrap as any).unpause();
+    Mousetrap.unpause();
   }, [isFullscreen, hide]);
 
   const handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -857,6 +855,8 @@ export const LightboxComponent: React.FC<IProps> = ({
                 {i >= currentIndex - 1 && i <= currentIndex + 1 ? (
                   <LightboxImage
                     src={image.paths.image ?? ""}
+                    width={image.visual_files?.[0]?.width ?? 0}
+                    height={image.visual_files?.[0]?.height ?? 0}
                     displayMode={displayMode}
                     scaleUp={lightboxSettings?.scaleUp ?? false}
                     scrollMode={
@@ -923,10 +923,8 @@ export const LightboxComponent: React.FC<IProps> = ({
                   />
                 </div>
                 <RatingSystem
-                  value={currentImage?.rating100 ?? undefined}
-                  onSetRating={(v) => {
-                    setRating(v ?? null);
-                  }}
+                  value={currentImage?.rating100}
+                  onSetRating={(v) => setRating(v)}
                 />
               </>
             )}

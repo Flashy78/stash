@@ -10,6 +10,25 @@ import * as GQL from "src/core/generated-graphql";
 
 import { OptionalField } from "../IncludeButton";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { getStashboxBase } from "src/utils/stashbox";
+import { ExternalLink } from "src/components/Shared/ExternalLink";
+
+interface IStudioName {
+  studio: GQL.ScrapedStudio | GQL.SlimStudioDataFragment;
+  id: string | undefined | null;
+  baseURL: string | undefined;
+}
+
+const StudioName: React.FC<IStudioName> = ({ studio, id, baseURL }) => {
+  const name =
+    baseURL && id ? (
+      <ExternalLink href={`${baseURL}${id}`}>{studio.name}</ExternalLink>
+    ) : (
+      studio.name
+    );
+
+  return <span>{name}</span>;
+};
 
 interface IStudioResultProps {
   studio: GQL.ScrapedStudio;
@@ -39,6 +58,11 @@ const StudioResult: React.FC<IStudioResultProps> = ({
   const matchedStashID = matchedStudio?.stash_ids.some(
     (stashID) => stashID.endpoint === endpoint && stashID.stash_id
   );
+
+  const stashboxStudioPrefix = endpoint
+    ? `${getStashboxBase(endpoint)}studios/`
+    : undefined;
+  const studioURLPrefix = "/studios/";
 
   const handleSelect = (studios: SelectObject[]) => {
     if (studios.length) {
@@ -74,11 +98,11 @@ const StudioResult: React.FC<IStudioResultProps> = ({
         <div className="entity-name">
           <FormattedMessage id="countables.studios" values={{ count: 1 }} />:
           <b className="ml-2">
-            {renderStudioName(
-              studio.name,
-              stashBoxBaseURL,
-              studio.remote_site_id
-            )}
+            <StudioName
+              studio={studio}
+              id={studio.remote_site_id}
+              baseURL={stashboxStudioPrefix}
+            />
           </b>
         </div>
         <span className="ml-auto">
@@ -93,7 +117,11 @@ const StudioResult: React.FC<IStudioResultProps> = ({
                 <FormattedMessage id="component_tagger.verb_matched" />:
               </span>
               <b className="col-3 text-right">
-                {renderStudioName(matchedStudio.name, "/", matchedStudio.id)}
+                <StudioName
+                  studio={matchedStudio}
+                  id={matchedStudio.id}
+                  baseURL={studioURLPrefix}
+                />
               </b>
             </div>
           </OptionalField>
@@ -124,11 +152,11 @@ const StudioResult: React.FC<IStudioResultProps> = ({
       <div className="entity-name">
         <FormattedMessage id="countables.studios" values={{ count: 1 }} />:
         <b className="ml-2">
-          {renderStudioName(
-            studio.name,
-            stashBoxBaseURL,
-            studio.remote_site_id
-          )}
+          <StudioName
+            studio={studio}
+            id={studio.remote_site_id}
+            baseURL={stashboxStudioPrefix}
+          />
         </b>
       </div>
       <ButtonGroup>

@@ -133,10 +133,6 @@ type BaseFile struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (f *BaseFile) FingerprintSlice() []Fingerprint {
-	return f.Fingerprints
-}
-
 // SetFingerprints sets the fingerprints of the file.
 // If a fingerprint of the same type already exists, it is overwritten.
 func (f *BaseFile) SetFingerprints(fp Fingerprints) {
@@ -203,6 +199,12 @@ func (f *BaseFile) Serve(fs FS, w http.ResponseWriter, r *http.Request) error {
 	} else {
 		w.Header().Set("Cache-Control", "no-cache")
 	}
+
+	// Set filename if not previously set
+	if w.Header().Get("Content-Disposition") == "" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`filename="%s"`, f.Basename))
+	}
+
 	http.ServeContent(w, r, f.Basename, f.ModTime, content)
 
 	return nil
