@@ -60,11 +60,6 @@ require (
 )
 
 require (
-	github.com/google/go-cmp v0.5.8 // indirect
-	golang.org/x/mod v0.6.0 // indirect
-)
-
-require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/antchfx/xpath v1.2.3 // indirect
 	github.com/asticode/go-astikit v0.20.0 // indirect

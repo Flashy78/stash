@@ -517,9 +517,8 @@ const ScenePage: React.FC<IProps> = ({
       {maybeRenderSceneGenerateDialog()}
       {maybeRenderDeleteDialog()}
       <div
-        className={`scene-tabs order-xl-first order-last ${
-          collapsed ? "collapsed" : ""
-        }`}
+        className={`scene-tabs order-xl-first order-last ${collapsed ? "collapsed" : ""
+          }`}
       >
         <div className="d-none d-xl-block">
           {scene.studio && (
@@ -624,6 +623,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
     }
   }
 
+  // Disable . as scrubber so it can be used for time jump
   // set up hotkeys
   // useEffect(() => {
   //   Mousetrap.bind(".", () => setHideScrubber((value) => !value));

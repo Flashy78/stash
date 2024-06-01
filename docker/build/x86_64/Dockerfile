@@ -32,9 +32,11 @@ RUN make flags-release flags-pie stash
 
 # Final Runnable Image
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates python3 py3-requests py3-requests-toolbelt py3-lxml py3-pip ffmpeg vips-tools ruby \
-    && pip install mechanicalsoup cloudscraper bencoder.pyx pystashlib \
-    && gem install faraday
+RUN apk add --no-cache ca-certificates vips-tools ffmpeg
+# Below is what I used before the big plugin rewrite.
+#RUN apk add --no-cache ca-certificates python3 py3-requests py3-requests-toolbelt py3-lxml py3-pip ffmpeg vips-tools ruby \
+#    && pip install mechanicalsoup cloudscraper bencoder.pyx pystashlib \
+#    && gem install faraday
 COPY --from=backend /stash/stash /usr/bin/
 ENV STASH_CONFIG_FILE=/root/.stash/config.yml
 EXPOSE 9999

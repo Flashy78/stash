@@ -103,6 +103,7 @@ func NewStudioStore(blobStore *BlobStore) *StudioStore {
 			blobStore: blobStore,
 			joinTable: studioTable,
 		},
+
 		tableMgr: studioTableMgr,
 	}
 }

@@ -43,7 +43,6 @@ func ToJSON(ctx context.Context, reader FinderImageStashIDGetter, studio *models
 	if studio.Rating != nil {
 		newStudioJSON.Rating = *studio.Rating
 	}
-	newStudioJSON.Aliases = studio.Aliases.List()
 
 	if err := studio.LoadAliases(ctx, reader); err != nil {
 		return nil, fmt.Errorf("loading studio aliases: %w", err)

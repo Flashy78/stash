@@ -76,12 +76,3 @@ func (s *Studio) LoadRelationships(ctx context.Context, l PerformerReader) error
 
 	return nil
 }
-
-// TODO: Seems like a good candidate for generics
-type StudioDBInput struct {
-	StudioCreate *Studio
-	StudioUpdate *StudioPartial
-
-	ParentCreate *Studio
-	ParentUpdate *StudioPartial
-}

@@ -383,8 +383,8 @@ const PerformerPage: React.FC<IProps> = ({ performer, tabKey }) => {
               autoTagDisabled={performer.ignore_auto_tag}
               isNew={false}
               isEditing={false}
-              onSave={() => { }}
-              onImageChange={() => { }}
+              onSave={() => {}}
+              onImageChange={() => {}}
               classNames="mb-2"
               customButtons={
                 <div>

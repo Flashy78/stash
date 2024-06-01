@@ -225,7 +225,6 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
                 isPortrait={isPortrait}
                 soundActive={false}
               />
-              {maybeRenderSpriteIcon()}
             </Link>
             <div className="d-flex justify-content-center">
               {maybeRenderSpriteIcon()}

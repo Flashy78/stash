@@ -26,13 +26,7 @@ func (s mockSceneScraper) ScrapeScenes(ctx context.Context, sceneID int) ([]*scr
 	if sliceutil.Contains(s.errIDs, sceneID) {
 		return nil, errors.New("scrape scene error")
 	}
-	output := []*scraper.ScrapedScene{}
-	output = append(output, s.results[sceneID])
-
-	if len(output) == 0 || (len(output) > 0 && output[0] == nil) {
-		return nil, nil
-	}
-	return output, nil
+	return s.results[sceneID], nil
 }
 
 type mockHookExecutor struct {
@@ -82,7 +76,6 @@ func TestSceneIdentifier_Identify(t *testing.T) {
 					}},
 				},
 			},
-			Options: defaultOptions,
 		},
 		{
 			Scraper: mockSceneScraper{
@@ -112,7 +105,6 @@ func TestSceneIdentifier_Identify(t *testing.T) {
 					},
 				},
 			},
-			Options: defaultOptions,
 		},
 	}
 
