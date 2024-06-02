@@ -218,14 +218,8 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
                 </Nav.Link>
               </Nav.Item>
             ) : undefined}
-            {path ? (
-              <Nav.Item>
-                <Nav.Link eventKey="gallery-file-info-panel">
-                  <FormattedMessage id="file_info" />
-                  <Counter count={gallery.files.length} hideZero hideOne />
-                </Nav.Link>
-              </Nav.Item>
-            ) : undefined}
+            {path ? undefined : undefined // RO: Hide file info panel
+            }
             <Nav.Item>
               <Nav.Link eventKey="gallery-chapter-panel">
                 <FormattedMessage id="chapters" />

@@ -16,21 +16,8 @@ export const StudioDetailsPanel: React.FC<IStudioDetailsPanel> = ({
   fullWidth,
 }) => {
   function renderStashIDs() {
-    if (!studio.stash_ids?.length) {
-      return;
-    }
-
-    return (
-      <ul className="pl-0">
-        {studio.stash_ids.map((stashID) => {
-          return (
-            <li key={stashID.stash_id} className="row no-gutters">
-              <StashIDPill stashID={stashID} linkType="studios" />
-            </li>
-          );
-        })}
-      </ul>
-    );
+    // RO: Hide stashids
+    return;
   }
 
   function maybeRenderExtraDetails() {

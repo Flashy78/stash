@@ -232,39 +232,8 @@ const ImageItemList = makeItemList({
     return result?.data?.findImages?.count ?? 0;
   },
   renderMetadataByline(result: GQL.FindImagesQueryResult) {
-    const megapixels = result?.data?.findImages?.megapixels;
-    const size = result?.data?.findImages?.filesize;
-    const filesize = size ? TextUtils.fileSize(size) : undefined;
-
-    if (!megapixels && !size) {
-      return;
-    }
-
-    const separator = megapixels && size ? " - " : "";
-
-    return (
-      <span className="images-stats">
-        &nbsp;(
-        {megapixels ? (
-          <span className="images-megapixels">
-            <FormattedNumber value={megapixels} /> Megapixels
-          </span>
-        ) : undefined}
-        {separator}
-        {size && filesize ? (
-          <span className="images-size">
-            <FormattedNumber
-              value={filesize.size}
-              maximumFractionDigits={TextUtils.fileSizeFractionalDigits(
-                filesize.unit
-              )}
-            />
-            {` ${TextUtils.formatFileSizeUnit(filesize.unit)}`}
-          </span>
-        ) : undefined}
-        )
-      </span>
-    );
+    // RO: Hide size
+    return;
   },
 });
 

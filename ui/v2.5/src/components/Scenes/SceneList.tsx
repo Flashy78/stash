@@ -39,39 +39,8 @@ const SceneItemList = makeItemList({
     return result?.data?.findScenes?.count ?? 0;
   },
   renderMetadataByline(result: GQL.FindScenesQueryResult) {
-    const duration = result?.data?.findScenes?.duration;
-    const size = result?.data?.findScenes?.filesize;
-    const filesize = size ? TextUtils.fileSize(size) : undefined;
-
-    if (!duration && !size) {
-      return;
-    }
-
-    const separator = duration && size ? " - " : "";
-
-    return (
-      <span className="scenes-stats">
-        &nbsp;(
-        {duration ? (
-          <span className="scenes-duration">
-            {TextUtils.secondsAsTimeString(duration, 3)}
-          </span>
-        ) : undefined}
-        {separator}
-        {size && filesize ? (
-          <span className="scenes-size">
-            <FormattedNumber
-              value={filesize.size}
-              maximumFractionDigits={TextUtils.fileSizeFractionalDigits(
-                filesize.unit
-              )}
-            />
-            {` ${TextUtils.formatFileSizeUnit(filesize.unit)}`}
-          </span>
-        ) : undefined}
-        )
-      </span>
-    );
+    // RO: Don't show total duration and file sizes
+    return;
   },
 });
 
