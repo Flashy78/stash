@@ -24,6 +24,10 @@ const sortByOptions = ["name", "random"]
       messageID: "scene_count",
       value: "scenes_count",
     },
+    {
+      messageID: "subsidiary_studio_count",
+      value: "child_count",
+    },
   ]);
 
 const displayModeOptions = [DisplayMode.Grid];
@@ -33,6 +37,12 @@ const criterionOptions = [
   ParentStudiosCriterionOption,
   createMandatoryNumberCriterionOption("scene_count"),
   createMandatoryNumberCriterionOption("gallery_count"),
+  createStringCriterionOption("url"),
+  createStringCriterionOption("aliases"),
+  createMandatoryNumberCriterionOption(
+    "child_count",
+    "subsidiary_studio_count"
+  ),
 ];
 
 export const StudioListFilterOptions = new ListFilterOptions(

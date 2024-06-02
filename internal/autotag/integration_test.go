@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/sqlite"
 	"github.com/stashapp/stash/pkg/txn"
@@ -62,7 +63,7 @@ func runTests(m *testing.M) int {
 		panic(fmt.Sprintf("Could not initialize database: %s", err.Error()))
 	}
 
-	r = db.TxnRepository()
+	r = db.Repository()
 
 	// defer close and delete the database
 	defer testTeardown(databaseFile)
@@ -77,6 +78,9 @@ func runTests(m *testing.M) int {
 }
 
 func TestMain(m *testing.M) {
+	// initialise empty config - needed by some db migrations
+	_ = config.InitializeEmpty()
+
 	ret := runTests(m)
 	os.Exit(ret)
 }
@@ -95,7 +99,7 @@ func createPerformer(ctx context.Context, pqb models.PerformerWriter) error {
 	return nil
 }
 
-func createStudio(ctx context.Context, qb models.StudioWriter, name string) (*int, error) {
+func createStudio(ctx context.Context, qb models.StudioWriter, name string) (*models.Studio, error) {
 	// create the studio
 	studio := models.Studio{
 		Name: name,
@@ -474,11 +478,11 @@ func createGallery(ctx context.Context, w models.GalleryWriter, o *models.Galler
 }
 
 func withTxn(f func(ctx context.Context) error) error {
-	return txn.WithTxn(context.TODO(), db, f)
+	return txn.WithTxn(testCtx, db, f)
 }
 
 func withDB(f func(ctx context.Context) error) error {
-	return txn.WithDatabase(context.TODO(), db, f)
+	return txn.WithDatabase(testCtx, db, f)
 }
 
 func populateDB() error {
@@ -494,11 +498,11 @@ func populateDB() error {
 		}
 
 		// create existing studio
-		createdID, err := createStudio(ctx, r.Studio, existingStudioName)
+		existingStudio, err := createStudio(ctx, r.Studio, existingStudioName)
 		if err != nil {
 			return err
 		}
-		existingStudioID = *createdID
+		existingStudioID = existingStudio.ID
 
 		err = createTag(ctx, r.Tag)
 		if err != nil {

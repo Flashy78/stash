@@ -284,7 +284,7 @@ func TestStudioDestroyParent(t *testing.T) {
 
 	// create parent and child studios
 	if err := withTxn(func(ctx context.Context) error {
-		createdParentID, err := createStudio(ctx, db.Studio, parentName, nil)
+		createdParent, err := createStudio(ctx, db.Studio, parentName, nil)
 		if err != nil {
 			return fmt.Errorf("Error creating parent studio: %s", err.Error())
 		}
@@ -298,13 +298,13 @@ func TestStudioDestroyParent(t *testing.T) {
 		sqb := db.Studio
 
 		// destroy the parent
-		err = sqb.Destroy(ctx, *createdParentID)
+		err = sqb.Destroy(ctx, createdParent.ID)
 		if err != nil {
 			return fmt.Errorf("Error destroying parent studio: %s", err.Error())
 		}
 
 		// destroy the child
-		err = sqb.Destroy(ctx, *createdChildID)
+		err = sqb.Destroy(ctx, createdChild.ID)
 		if err != nil {
 			return fmt.Errorf("Error destroying child studio: %s", err.Error())
 		}
@@ -346,7 +346,7 @@ func TestStudioUpdateClearParent(t *testing.T) {
 
 	// create parent and child studios
 	if err := withTxn(func(ctx context.Context) error {
-		createdParentID, err := createStudio(ctx, db.Studio, parentName, nil)
+		createdParent, err := createStudio(ctx, db.Studio, parentName, nil)
 		if err != nil {
 			return fmt.Errorf("Error creating parent studio: %s", err.Error())
 		}
@@ -387,12 +387,12 @@ func TestStudioUpdateStudioImage(t *testing.T) {
 
 		// create studio to test against
 		const name = "TestStudioUpdateStudioImage"
-		createdID, err := createStudio(ctx, db.Studio, name, nil)
+		created, err := createStudio(ctx, db.Studio, name, nil)
 		if err != nil {
 			return fmt.Errorf("Error creating studio: %s", err.Error())
 		}
 
-		return testUpdateImage(t, ctx, *createdID, qb.UpdateImage, qb.GetImage)
+		return testUpdateImage(t, ctx, created.ID, qb.UpdateImage, qb.GetImage)
 	}); err != nil {
 		t.Error(err.Error())
 	}
@@ -551,7 +551,7 @@ func TestStudioStashIDs(t *testing.T) {
 
 		// create studio to test against
 		const name = "TestStudioStashIDs"
-		createdID, err := createStudio(ctx, db.Studio, name, nil)
+		created, err := createStudio(ctx, db.Studio, name, nil)
 		if err != nil {
 			return fmt.Errorf("Error creating studio: %s", err.Error())
 		}
@@ -672,7 +672,7 @@ func TestStudioQueryURL(t *testing.T) {
 }
 
 func TestStudioQueryRating(t *testing.T) {
-	const rating = 3
+	const rating = 60
 	ratingCriterion := models.IntCriterionInput{
 		Value:    rating,
 		Modifier: models.CriterionModifierEquals,
@@ -718,7 +718,7 @@ func verifyStudiosRating(t *testing.T, ratingCriterion models.IntCriterionInput)
 	withTxn(func(ctx context.Context) error {
 		sqb := db.Studio
 		studioFilter := models.StudioFilterType{
-			Rating: &ratingCriterion,
+			Rating100: &ratingCriterion,
 		}
 
 		studios, _, err := sqb.Query(ctx, &studioFilter, nil)
@@ -959,7 +959,7 @@ func TestStudioQueryFast(t *testing.T) {
 		URL: &testStringCriterion,
 	}
 	ratingFilter := models.StudioFilterType{
-		Rating: &testIntCriterion,
+		Rating100: &testIntCriterion,
 	}
 	sceneCountFilter := models.StudioFilterType{
 		SceneCount: &testIntCriterion,

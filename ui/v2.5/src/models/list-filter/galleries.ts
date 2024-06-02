@@ -30,7 +30,13 @@ const displayModeOptions = [
 ];
 
 const criterionOptions = [
+  createStringCriterionOption("title"),
+  createStringCriterionOption("code", "scene_code"),
   createStringCriterionOption("details"),
+  createStringCriterionOption("photographer"),
+  RatingCriterionOption,
+  AverageResolutionCriterionOption,
+  GalleryIsMissingCriterionOption,
   TagsCriterionOption,
   HasChaptersCriterionOption,
   createMandatoryNumberCriterionOption("tag_count"),

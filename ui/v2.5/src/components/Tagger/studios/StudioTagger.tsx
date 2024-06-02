@@ -25,7 +25,10 @@ import StudioConfig from "./Config";
 import { LOCAL_FORAGE_KEY, ITaggerConfig, initialConfig } from "../constants";
 import StudioModal from "../scenes/StudioModal";
 import { useUpdateStudio } from "../queries";
+import { apolloError } from "src/utils";
 import { faStar, faTags } from "@fortawesome/free-solid-svg-icons";
+import { ExternalLink } from "src/components/Shared/ExternalLink";
+import { mergeStudioStashIDs } from "../utils";
 
 type JobFragment = Pick<
   GQL.Job,
@@ -83,10 +86,10 @@ const StudioBatchUpdateModal: React.FC<IStudioBatchUpdateModal> = ({
     return queryAll
       ? allStudios?.findStudios.count
       : filteredStashIDs.filter((s) =>
-        // if refresh, then we filter out the studios without a stash id
-        // otherwise, we want untagged studios, filtering out those with a stash id
-        refresh ? s.length > 0 : s.length === 0
-      ).length;
+         // if refresh, then we filter out the studios without a stash id
+         // otherwise, we want untagged studios, filtering out those with a stash id
+         refresh ? s.length > 0 : s.length === 0
+       ).length;
   }, [queryAll, refresh, studios, allStudios, selectedEndpoint.endpoint]);
 
   return (
@@ -284,6 +287,7 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
   onBatchUpdate,
 }) => {
   const intl = useIntl();
+
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<
     Record<string, GQL.ScrapedStudioDataFragment[]>
@@ -401,8 +405,8 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
         details:
           message === "UNIQUE constraint failed: studios.name"
             ? intl.formatMessage({
-              id: "studio_tagger.name_already_exists",
-            })
+               id: "studio_tagger.name_already_exists",
+             })
             : message,
       },
     });
@@ -423,6 +427,10 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
               ...parentInput,
               id: input.parent_id,
             };
+            parentUpdateData.stash_ids = await mergeStudioStashIDs(
+              input.parent_id,
+              parentInput.stash_ids ?? []
+            );
             await updateStudio(parentUpdateData);
           } else {
             const parentRes = await createStudio({
@@ -430,9 +438,8 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
             });
             input.parent_id = parentRes.data?.studioCreate?.id;
           }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-          handleSaveError(studioID, parentInput.name, e.message ?? "");
+        } catch (e) {
+          handleSaveError(studioID, parentInput.name, apolloError(e));
         }
       }
 
@@ -440,6 +447,10 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
         ...input,
         id: studioID,
       };
+      updateData.stash_ids = await mergeStudioStashIDs(
+        studioID,
+        input.stash_ids ?? []
+      );
 
       const res = await updateStudio(updateData);
       if (!res.data?.studioUpdate)
@@ -514,14 +525,12 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
       if (stashID !== undefined) {
         const base = stashID.endpoint.match(/https?:\/\/.*?\//)?.[0];
         const link = base ? (
-          <a
+          <ExternalLink
             className="small d-block"
             href={`${base}studios/${stashID.stash_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             {stashID.stash_id}
-          </a>
+          </ExternalLink>
         ) : (
           <div className="small">{stashID.stash_id}</div>
         );
@@ -610,7 +619,7 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
             <div></div>
             <div>
               <Card className="studio-card">
-                <img src={studio.image_path ?? ""} alt="" />
+                <img loading="lazy" src={studio.image_path ?? ""} alt="" />
               </Card>
             </div>
             <div className={`${CLASSNAME}-details-text`}>

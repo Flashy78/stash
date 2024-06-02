@@ -12,6 +12,7 @@ import { PathCriterionOption } from "./criteria/path";
 import { PerformersCriterionOption } from "./criteria/performers";
 import { RatingCriterionOption } from "./criteria/rating";
 import { ResolutionCriterionOption } from "./criteria/resolution";
+import { OrientationCriterionOption } from "./criteria/orientation";
 import { StudiosCriterionOption } from "./criteria/studios";
 import {
   PerformerTagsCriterionOption,
@@ -19,6 +20,7 @@ import {
 } from "./criteria/tags";
 import { ListFilterOptions, MediaSortByOptions } from "./filter-options";
 import { DisplayMode } from "./types";
+import { GalleriesCriterionOption } from "./criteria/galleries";
 
 const defaultSortBy = "title";
 
@@ -31,12 +33,19 @@ const sortByOptions = [
 const displayModeOptions = [DisplayMode.Wall];
 const criterionOptions = [
   createStringCriterionOption("title"),
+  createStringCriterionOption("code", "scene_code"),
+  createStringCriterionOption("details"),
+  createStringCriterionOption("photographer"),
+  GalleriesCriterionOption,
   createMandatoryNumberCriterionOption("o_counter"),
   ResolutionCriterionOption,
+  OrientationCriterionOption,
+  ImageIsMissingCriterionOption,
   TagsCriterionOption,
   PerformersCriterionOption,
   createMandatoryNumberCriterionOption("performer_count"),
   createMandatoryNumberCriterionOption("performer_age"),
+  PerformerFavoriteCriterionOption,
   StudiosCriterionOption,
   createDateCriterionOption("date"),
 ];

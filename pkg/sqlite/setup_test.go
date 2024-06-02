@@ -14,8 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stashapp/stash/internal/manager/config"
 	"github.com/stashapp/stash/pkg/models"
-	"github.com/stashapp/stash/pkg/sliceutil/intslice"
+	"github.com/stashapp/stash/pkg/sliceutil"
 	"github.com/stashapp/stash/pkg/sqlite"
 	"github.com/stashapp/stash/pkg/txn"
 
@@ -535,6 +536,9 @@ func indexFromID(ids []int, id int) int {
 var db *sqlite.Database
 
 func TestMain(m *testing.M) {
+	// initialise empty config - needed by some migrations
+	_ = config.InitializeEmpty()
+
 	ret := runTests(m)
 	os.Exit(ret)
 }
@@ -600,10 +604,10 @@ func runTests(m *testing.M) int {
 	err = populateDB()
 	if err != nil {
 		panic(fmt.Sprintf("Could not populate database: %s", err.Error()))
-	} else {
-		// run the tests
-		return m.Run()
 	}
+
+	// run the tests
+	return m.Run()
 }
 
 func populateDB() error {
@@ -1008,10 +1012,6 @@ func makeSceneFile(i int) *models.VideoFile {
 	}
 }
 
-func getScenePlayCount(index int) int {
-	return index % 5
-}
-
 func getScenePlayDuration(index int) float64 {
 	if index%5 == 0 {
 		return 0
@@ -1026,15 +1026,6 @@ func getSceneResumeTime(index int) float64 {
 	}
 
 	return float64(index%5) * 1.2
-}
-
-func getSceneLastPlayed(index int) *time.Time {
-	if index%5 == 0 {
-		return nil
-	}
-
-	t := time.Date(2020, 1, index%5, 1, 2, 3, 0, time.UTC)
-	return &t
 }
 
 func makeScene(i int) *models.Scene {
@@ -1069,7 +1060,6 @@ func makeScene(i int) *models.Scene {
 			getSceneEmptyString(i, urlField),
 		}),
 		Rating:       getIntPtr(rating),
-		OCounter:     getOCounter(i),
 		Date:         getObjectDate(i),
 		StudioID:     studioID,
 		GalleryIDs:   models.NewRelatedIDs(gids),
@@ -1079,9 +1069,7 @@ func makeScene(i int) *models.Scene {
 		StashIDs: models.NewRelatedStashIDs([]models.StashID{
 			sceneStashID(i),
 		}),
-		PlayCount:    getScenePlayCount(i),
 		PlayDuration: getScenePlayDuration(i),
-		LastPlayedAt: getSceneLastPlayed(i),
 		ResumeTime:   getSceneResumeTime(i),
 	}
 }
@@ -1176,7 +1164,7 @@ func makeImage(i int) *models.Image {
 }
 
 func createImages(ctx context.Context, n int) error {
-	qb := db.TxnRepository().Image
+	qb := db.Image
 	fqb := db.File
 
 	for i := 0; i < n; i++ {
@@ -1273,7 +1261,7 @@ func makeGallery(i int, includeScenes bool) *models.Gallery {
 }
 
 func createGalleries(ctx context.Context, n int) error {
-	gqb := db.TxnRepository().Gallery
+	gqb := db.Gallery
 	fqb := db.File
 
 	for i := 0; i < n; i++ {
@@ -1506,7 +1494,7 @@ func getTagMarkerCount(id int) int {
 	count := 0
 	idx := indexFromID(tagIDs, id)
 	for _, s := range markerSpecs {
-		if s.primaryTagIdx == idx || intslice.IntInclude(s.tagIdxs, idx) {
+		if s.primaryTagIdx == idx || sliceutil.Contains(s.tagIdxs, idx) {
 			count++
 		}
 	}

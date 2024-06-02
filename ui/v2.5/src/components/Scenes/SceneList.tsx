@@ -207,6 +207,7 @@ export const SceneList: React.FC<ISceneList> = ({
       if (isGenerateDialogOpen) {
         return (
           <GenerateDialog
+            type="scene"
             selectedIds={Array.from(selectedIds.values())}
             onClose={() => setIsGenerateDialogOpen(false)}
           />
