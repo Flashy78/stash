@@ -36,6 +36,7 @@ type studioRow struct {
 	UpdatedAt Timestamp   `db:"updated_at"`
 	// expressed as 1-100
 	Rating        null.Int    `db:"rating"`
+	Favorite      bool        `db:"favorite"`
 	Details       zero.String `db:"details"`
 	IgnoreAutoTag bool        `db:"ignore_auto_tag"`
 
@@ -51,6 +52,7 @@ func (r *studioRow) fromStudio(o models.Studio) {
 	r.CreatedAt = Timestamp{Timestamp: o.CreatedAt}
 	r.UpdatedAt = Timestamp{Timestamp: o.UpdatedAt}
 	r.Rating = intFromPtr(o.Rating)
+	r.Favorite = o.Favorite
 	r.Details = zero.StringFrom(o.Details)
 	r.IgnoreAutoTag = o.IgnoreAutoTag
 }
@@ -64,6 +66,7 @@ func (r *studioRow) resolve() *models.Studio {
 		CreatedAt:     r.CreatedAt.Timestamp,
 		UpdatedAt:     r.UpdatedAt.Timestamp,
 		Rating:        nullIntPtr(r.Rating),
+		Favorite:      r.Favorite,
 		Details:       r.Details.String,
 		IgnoreAutoTag: r.IgnoreAutoTag,
 	}
@@ -82,6 +85,7 @@ func (r *studioRowRecord) fromPartial(o models.StudioPartial) {
 	r.setTimestamp("created_at", o.CreatedAt)
 	r.setTimestamp("updated_at", o.UpdatedAt)
 	r.setNullInt("rating", o.Rating)
+	r.setBool("favorite", o.Favorite)
 	r.setNullString("details", o.Details)
 	r.setBool("ignore_auto_tag", o.IgnoreAutoTag)
 }
@@ -496,6 +500,7 @@ func (qb *StudioStore) makeFilter(ctx context.Context, studioFilter *models.Stud
 	query.handleCriterion(ctx, stringCriterionHandler(studioFilter.Details, studioTable+".details"))
 	query.handleCriterion(ctx, stringCriterionHandler(studioFilter.URL, studioTable+".url"))
 	query.handleCriterion(ctx, intCriterionHandler(studioFilter.Rating100, studioTable+".rating", nil))
+	query.handleCriterion(ctx, boolCriterionHandler(studioFilter.Favorite, studioTable+".favorite", nil))
 	query.handleCriterion(ctx, boolCriterionHandler(studioFilter.IgnoreAutoTag, studioTable+".ignore_auto_tag", nil))
 
 	query.handleCriterion(ctx, criterionHandlerFunc(func(ctx context.Context, f *filterBuilder) {
@@ -550,7 +555,12 @@ func (qb *StudioStore) makeQuery(ctx context.Context, studioFilter *models.Studi
 		return nil, err
 	}
 
-	query.sortAndPagination = qb.getStudioSort(findFilter) + getPagination(findFilter)
+	var err error
+	query.sortAndPagination, err = qb.getStudioSort(findFilter)
+	if err != nil {
+		return nil, err
+	}
+	query.sortAndPagination += getPagination(findFilter)
 
 	return &query, nil
 }
@@ -661,7 +671,20 @@ func studioChildCountCriterionHandler(qb *StudioStore, childCount *models.IntCri
 	}
 }
 
-func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) string {
+var studioSortOptions = sortOptions{
+	"child_count",
+	"created_at",
+	"galleries_count",
+	"id",
+	"images_count",
+	"name",
+	"scenes_count",
+	"random",
+	"rating",
+	"updated_at",
+}
+
+func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) (string, error) {
 	var sort string
 	var direction string
 	if findFilter == nil {
@@ -670,6 +693,11 @@ func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) string {
 	} else {
 		sort = findFilter.GetSort("name")
 		direction = findFilter.GetDirection()
+	}
+
+	// CVE-2024-32231 - ensure sort is in the list of allowed sorts
+	if err := studioSortOptions.validateSort(sort); err != nil {
+		return "", err
 	}
 
 	sortQuery := ""
@@ -688,7 +716,7 @@ func (qb *StudioStore) getStudioSort(findFilter *models.FindFilterType) string {
 
 	// Whatever the sorting, always use name/id as a final sort
 	sortQuery += ", COALESCE(studios.name, studios.id) COLLATE NATURAL_CI ASC"
-	return sortQuery
+	return sortQuery, nil
 }
 
 func (qb *StudioStore) GetImage(ctx context.Context, studioID int) ([]byte, error) {

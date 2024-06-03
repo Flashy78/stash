@@ -49,6 +49,7 @@ import { PluginRoutes } from "./plugins";
 
 // import plugin_api to run code
 import "./pluginApi";
+import { ConnectionMonitor } from "./ConnectionMonitor";
 
 const Performers = lazyComponent(
   () => import("./components/Performers/Performers")
@@ -276,7 +277,7 @@ export const App: React.FC = () => {
       status === GQL.SystemStatusEnum.NeedsMigration
     ) {
       // redirect to migrate page
-      history.push("/migrate");
+      history.replace("/migrate");
     }
   }, [systemStatusData, setupMatch, history, location]);
 
@@ -369,6 +370,7 @@ export const App: React.FC = () => {
           >
             {maybeRenderReleaseNotes()}
             <ToastProvider>
+              <ConnectionMonitor />
               <Suspense fallback={<LoadingIndicator />}>
                 <LightboxProvider>
                   <ManualProvider>
