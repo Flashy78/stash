@@ -6,7 +6,7 @@ import {
   createDateCriterionOption,
   createMandatoryTimestampCriterionOption,
 } from "./criteria/criterion";
-import { FavoriteCriterionOption } from "./criteria/favorite";
+import { FavoritePerformerCriterionOption } from "./criteria/favorite";
 import { GenderCriterionOption } from "./criteria/gender";
 import { CircumcisedCriterionOption } from "./criteria/circumcised";
 import { PerformerIsMissingCriterionOption } from "./criteria/is-missing";
@@ -24,6 +24,9 @@ const sortByOptions = [
   "random",
   "rating",
   "penis_length",
+  "play_count",
+  "last_played_at",
+  "last_o_at",
 ]
   .map(ListFilterOptions.createSortBy)
   .concat([
@@ -36,7 +39,7 @@ const sortByOptions = [
       value: "galleries_count",
     },
     {
-      messageID: "o_counter",
+      messageID: "o_count",
       value: "o_counter",
     },
   ]);
@@ -67,6 +70,7 @@ const stringCriteria: CriterionType[] = [
 ];
 
 const criterionOptions = [
+  FavoritePerformerCriterionOption,
   GenderCriterionOption,
   CircumcisedCriterionOption,
   TagsCriterionOption,

@@ -24,20 +24,22 @@ import { GalleriesCriterionOption } from "./criteria/galleries";
 
 const defaultSortBy = "title";
 
-const sortByOptions = [
-  "o_counter",
-  "date",
-  ...MediaSortByOptions,
-].map(ListFilterOptions.createSortBy);
-
-const displayModeOptions = [DisplayMode.Wall];
+const sortByOptions = [...MediaSortByOptions]
+  .map(ListFilterOptions.createSortBy)
+  .concat([
+    {
+      messageID: "o_count",
+      value: "o_counter",
+    },
+  ]);
+const displayModeOptions = [DisplayMode.Grid, DisplayMode.Wall];
 const criterionOptions = [
   createStringCriterionOption("title"),
   createStringCriterionOption("code", "scene_code"),
   createStringCriterionOption("details"),
   createStringCriterionOption("photographer"),
   GalleriesCriterionOption,
-  createMandatoryNumberCriterionOption("o_counter"),
+  createMandatoryNumberCriterionOption("o_counter", "o_count"),
   ResolutionCriterionOption,
   OrientationCriterionOption,
   ImageIsMissingCriterionOption,

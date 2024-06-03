@@ -590,6 +590,8 @@ const PerformerPage: React.FC<IProps> = ({ performer, tabKey }) => {
               <RatingSystem
                 value={performer.rating100}
                 onSetRating={(value) => setRating(value)}
+                clickToRate
+                withoutContext
               />
               {maybeRenderDetails()}
               {maybeRenderEditPanel()}
